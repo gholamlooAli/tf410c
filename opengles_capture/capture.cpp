@@ -838,7 +838,59 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 		/* setup the display event callback functions and context */
 		disp->callbacks.key_event = do_key_event;
 		disp->callbacks.private_context = cap;
+/*		
+// Reads a model graph definition from disk, and creates a session object you
+// can use to run it.
+Status LoadGraph(string graph_file_name,
+                 std::unique_ptr<tensorflow::Session>* session) {
+  tensorflow::GraphDef graph_def;
+  Status load_graph_status =
+      ReadBinaryProto(tensorflow::Env::Default(), graph_file_name, &graph_def);
+  if (!load_graph_status.ok()) {
+    return tensorflow::errors::NotFound("Failed to load compute graph at '",
+                                        graph_file_name, "'");
+  }
+  session->reset(tensorflow::NewSession(tensorflow::SessionOptions()));
+  Status session_create_status = (*session)->Create(graph_def);
+  if (!session_create_status.ok()) {
+    return session_create_status;
+  }
+  return Status::OK();
+}		
+ // First we load and initialize the model.
+  std::unique_ptr<tensorflow::Session> session;
+  string graph_path = tensorflow::io::JoinPath(root_dir, graph);
+  Status load_graph_status = LoadGraph(graph_path, &session);
+  if (!load_graph_status.ok()) {
+    LOG(ERROR) << load_graph_status;
+    return -1;
+  }
 
+  std::vector<string> labels;
+  size_t label_count;
+  Status read_labels_status =
+      ReadLabelsFile(labels_file_name, &labels, &label_count);
+  if (!read_labels_status.ok()) {
+    LOG(ERROR) << read_labels_status;
+    return -1;
+  }
+	
+ // Actually run the image through the model.
+    std::vector<Tensor> outputs;
+    Status run_status = session->Run({{input_layer, resized_tensor}},
+                                     {output_layer}, {}, &outputs);
+    if (!run_status.ok()) {
+      LOG(ERROR) << "Running model failed: " << run_status;
+      return -1;
+    }
+
+    // Do something interesting with the results we've generated.
+    Status print_status =
+        PrintTopLabels(outputs, labels, label_count, print_threshold * 0.01f);
+    if (!print_status.ok()) {
+      LOG(ERROR) << "Running print failed: " << print_status;
+      return -1;
+    } 
 		/* Enter the capture display loop */
 		ret = capture_display_yuv(cap, disp, opt);
 		/* Cleanly release the buffers map and free them in the kernel on either error or exit request. */
@@ -846,3 +898,18 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 
 		return ret;
 }
+/*
+tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT,tensorflow::TensorShape({1, height, width, depth}));
+auto input_tensor_mapped = input_tensor.tensor<float, 4>();
+
+const float* source_data = some_structure.imageData;
+for (int y = 0; y < height; ++y) {
+    const float* source_row = source_data + (y * width * depth);
+    for (int x = 0; x < width; ++x) {
+        const float* source_pixel = source_row + (x * depth);
+        for (int c = 0; c < depth; ++c) {
+           const float* source_value = source_pixel + c;
+           input_tensor_mapped(0, y, x, c) = *source_value;
+        }
+    }
+}*/

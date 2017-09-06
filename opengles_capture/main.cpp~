@@ -280,7 +280,7 @@ int main(int argc, char * const argv[])
 	mydev+=10;
 	if(*mydev=='3'){
 		opt->ddump=false;
-		system("/home/linaro/410c_camera_support/opengles_capture/nv12_320.sh");
+		system("/home/linaro/410c_camera_support/opengles_capture/nv12_640.sh");
 		opt->im_width=320;//640;//1280;
 		opt->im_height=240;//480;//960;
 		if(opt->win_width==0)
