@@ -39,7 +39,7 @@ extern "C" {
  */
 #define DEFAULT_COUNT 5
 #define DEFAULT_DEVICE "/dev/video3"
-#define DEFAULT_BUFFER_COUNT 4
+#define DEFAULT_BUFFER_COUNT 8
 #define DEFAULT_SUBDEVICE "/dev/v4l-subdev10"
 
 #define CAPTURE_DEV		'd'

@@ -72,6 +72,7 @@ struct render_context
 	int num_buffers;
 	/** array of pointers to memory mapped video planes to display. */
 	void *buffers[MAX_RENDER_BUFFERS];
+ unsigned char rgbbuf[320*240*3];
 };
 
 /**
@@ -139,7 +140,7 @@ struct display_context
  * @return error status of the setup. Value 0 is returned on success.
  */
 int camera_nv12m_setup(struct display_context* disp, struct render_context *render_ctx, struct options* opt, struct capture_context *cap);
-
+int setTexParam(void);
 
 /**
  * Initialize EGL drawing surface attached to the native window.

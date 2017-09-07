@@ -72,6 +72,7 @@ struct render_context
 	int num_buffers;
 	/** array of pointers to memory mapped video planes to display. */
 	void *buffers[MAX_RENDER_BUFFERS];
+ unsigned char rgbbuf[320*240*3];
 };
 
 /**

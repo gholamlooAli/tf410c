@@ -50,6 +50,67 @@
 #include "display.h"
 #include "log.h"
 
+#include "/media/linaro/k1/tf/tensorflow/tensorflow/core/public/session.h"
+#include "/media/linaro/k1/tf/tensorflow/tensorflow/core/platform/env.h"
+#include "/media/linaro/k1/tf/tensorflow/tensorflow/core/framework/tensor.h"
+
+int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb){
+	unsigned char yy,uu,vv;
+	float fr,fg,fb,ym16,um128,vm128;
+	for (int j=0; j<240;j++){
+		
+		for (int i=0; i<320;i++){
+			yy=*py;
+			py++;
+			uu=*puv;
+			puv++;
+			vv=*puv;
+			puv++;
+			um128=(float)uu-128;
+			vm128=(float)vv-128;
+			
+			ym16=(float)yy-16;
+			
+			fr=ym16+(1.3707 * vm128);
+			fg=ym16- (0.6980 * vm128) - (0.3376*um128);
+			fb=ym16+(1.7324 * um128);
+			
+			if(fr>255)
+				fr=255;
+			if(fr<0)
+				fr=0;
+			
+			if(fg>255)
+				fg=255;
+			if(fg<0)
+				fg=0;
+			
+			if(fb>255)
+				fb=255;
+			if(fb<0)
+				fb=0;
+			//fr=255.0;
+			//fg=1.0;
+			//fb=0.0;
+			*prgb=(unsigned char) fr;
+			prgb++;
+			*prgb=(unsigned char) fg;
+			prgb++;
+			*prgb=(unsigned char) fb;
+			prgb++;
+			if(i%2==0)
+				puv-=2;
+		}
+		if(j%2==0){
+			puv-=320;
+			//printf("fr=%f,  fg=%f,  fb=%f\n",fr,fg,fb);
+		}
+	}
+
+	
+	
+	return 0;
+}
 /**
  * Exit signal control to free kernel buffers.
  * volatile to ensure that the variable is not optimized out.
@@ -305,6 +366,10 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		return -1;
 	}
 
+	// creating a Tensor for storing the data
+	tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,224,224,3}));
+	auto input_tensor_mapped = input_tensor.tensor<float, 4>();
+	
 	gettimeofday (&t1, &tz);
 	/* Continue until an error occurs or external signal requests an exit */
 	while(!ret && !signal_quit)
@@ -353,7 +418,28 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 			disp->render_ctx.buffers[1]=disp->render_ctx.buffers[0]+(opt->im_width*opt->im_height);
 			//disp->render_ctx.buffers[1] = (1280*960)+cap->buffers[buf.index].addr[0];
 		}
-		//printf("the buffer index=%d\n",disp->cur_bufferindex);
+		if(opt->rgbinput){
+			conv_nv12_rgb((unsigned char *)disp->render_ctx.buffers[0], (unsigned char *)disp->render_ctx.buffers[1], &disp->render_ctx.rgbbuf[0]);
+			int height = 224;
+			int width = 224;
+			int width2 = 320;
+			int depth=3;
+			int mean = 128;
+			int std = 128;
+			
+			const unsigned char * source_data = &disp->render_ctx.rgbbuf[0];
+			for (int y = 0; y < height; ++y) {
+				const unsigned char* source_row = source_data + (y * width2 * depth);
+				for (int x = 0; x < width; ++x) {
+					const unsigned char* source_pixel = source_row + (x * depth);
+						for (int c = 0; c < depth; ++c) {
+							const unsigned char* source_value = source_pixel + c;
+							input_tensor_mapped(0, y, x, c) = (float) *source_value;
+						}
+				}
+			}
+		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
+		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[1]);
 		/*
 		 * Render the planes to the display.
 		 * Return value inidcates error or request to exit the capture-display loop.
@@ -838,7 +924,7 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 		/* setup the display event callback functions and context */
 		disp->callbacks.key_event = do_key_event;
 		disp->callbacks.private_context = cap;
-		
+/*		
 // Reads a model graph definition from disk, and creates a session object you
 // can use to run it.
 Status LoadGraph(string graph_file_name,
@@ -898,7 +984,7 @@ Status LoadGraph(string graph_file_name,
 
 		return ret;
 }
-
+/*
 tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT,tensorflow::TensorShape({1, height, width, depth}));
 auto input_tensor_mapped = input_tensor.tensor<float, 4>();
 
@@ -912,4 +998,4 @@ for (int y = 0; y < height; ++y) {
            input_tensor_mapped(0, y, x, c) = *source_value;
         }
     }
-}
+}*/

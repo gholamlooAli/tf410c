@@ -812,12 +812,11 @@ int camera_nv12m_setup(struct display_context* disp, struct render_context *rend
 	 */
 	
 	if(!opt->ddump){
-		if(!opt->rgbinput){
-			glBindTexture(GL_TEXTURE_2D, disp->texture[1]);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width/2,opt->im_height/2/*disp->width/2, disp->height/2*/, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
-			setTexParam();
-		}
+		glBindTexture(GL_TEXTURE_2D, disp->texture[1]);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width/2,opt->im_height/2/*disp->width/2, disp->height/2*/, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
+		setTexParam();
+		
 
 	}
 	if(opt->rgbtext){

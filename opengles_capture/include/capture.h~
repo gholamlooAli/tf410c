@@ -126,5 +126,5 @@ int capture_setup(struct capture_context *cap, struct options *opt);
  * @return error status of the shutdown. Value 0 is returned on success.
  */
 int capture_shutdown(struct capture_context *cap);
-int conv_nv12_rgb(unsigned char *, unsigned char *, unsigned char *);
+
 #endif

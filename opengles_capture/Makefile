@@ -9,10 +9,10 @@
 # libxext-dev
 # libdrm-dev
 
-
+PATH := $(PATH):/media/linaro/k1/tf/tensorflow
 CROSS_COMPILE ?=
 CC := $(CROSS_COMPILE)g++
-CFLAGS ?= -std=gnu99 -Iinclude
+CFLAGS ?= -std=gnu99 -Iinclude  /media/linaro/k1/tf/tensorflow
 ifneq ('$(DEBUG)','')
     CFLAGS += -g
 else

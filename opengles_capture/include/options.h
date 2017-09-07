@@ -75,6 +75,7 @@ struct options {
  int im_height;
  int win_width;
  int win_height;
+ int rgbinput;
  int rgbtext;
  int ddump;
  int eglimage;

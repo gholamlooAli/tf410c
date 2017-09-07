@@ -9,9 +9,9 @@
 # libxext-dev
 # libdrm-dev
 
-
+PATH := $(PATH):/media/linaro/k1/tf/tensorflow
 CROSS_COMPILE ?=
-CC := $(CROSS_COMPILE)gcc
+CC := $(CROSS_COMPILE)g++
 CFLAGS ?= -std=gnu99 -Iinclude
 ifneq ('$(DEBUG)','')
     CFLAGS += -g
@@ -24,10 +24,10 @@ OUTDIR := out
 LIBS := -l:libGLESv2.so.2 -l:libEGL.so.1 -lX11 -lXext
 LDFLAGS := -L/usr/lib/aarch64-linux-gnu
 
-SOURCE := main.c capture.c display.c gles_egl_util.c
-SOURCE += $(wildcard uses/*.c)
+SOURCE := main.cpp capture.cpp display.cpp gles_egl_util.cpp
+SOURCE += $(wildcard uses/*.cpp)
 
-OBJS = $(patsubst %.c, $(OUTDIR)/%.o, $(SOURCE))
+OBJS = $(patsubst %.cpp, $(OUTDIR)/%.o, $(SOURCE))
 
 
 all: capture
@@ -37,12 +37,12 @@ $(OUTDIR) $(OUTDIR)/uses:
 	mkdir -p $@
 
 ifneq ('$(PREPROCESS)','')
-PRE_OBJS := $(patsubst %.c, $(OUTDIR)/%.PRE, $(SOURCE)) $(OBJS)
-$(OUTDIR)/%.PRE : %.c
+PRE_OBJS := $(patsubst %.cpp, $(OUTDIR)/%.PRE, $(SOURCE)) $(OBJS)
+$(OUTDIR)/%.PRE : %.cpp
 	$(CPP) $(CFLAGS) -c -g -o $@ $<
 endif
 
-$(OUTDIR)/%.o : %.c
+$(OUTDIR)/%.o : %.cpp
 	$(CC) $(CFLAGS) -MD -c -o $@ $<
 -include $(OBJS:.o=.d)
 
