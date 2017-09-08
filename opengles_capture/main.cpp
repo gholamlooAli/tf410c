@@ -111,7 +111,7 @@ void set_default_options(struct options *opt)
 	opt->subdev_name = (char*)DEFAULT_SUBDEVICE;
 	opt->buffer_count = DEFAULT_BUFFER_COUNT;
 	opt->program_use = opt->default_usage;
-	opt->dma_export = true;
+	opt->dma_export = false;//true;
 	opt->ddump=false;//true;
 	opt->eglimage=false;
 	opt->rgbtext=false;

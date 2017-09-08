@@ -50,6 +50,22 @@
 #include "display.h"
 #include "log.h"
 
+#ifdef Success
+#undef Success
+ #endif
+ #ifdef Status
+ #undef Status
+  #endif
+  #ifdef  None
+ #undef None
+  #endif
+  #ifdef Complex
+ #undef Complex
+  #endif
+  #ifdef BadColor
+ #undef BadColor
+  #endif
+  
 #include "tensorflow/core/public/session.h"
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -324,6 +340,63 @@ int stop_stream(int fd)
 	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	return ioctl(fd, VIDIOC_STREAMOFF, &type);
 }
+// Reads a model graph definition from disk, and creates a session object you
+// can use to run it.
+Status LoadGraph(string graph_file_name, std::unique_ptr<tensorflow::Session>* session) {
+	tensorflow::GraphDef graph_def;
+	Status load_graph_status = ReadBinaryProto(tensorflow::Env::Default(), graph_file_name, &graph_def);
+	if (!load_graph_status.ok()) {
+		return tensorflow::errors::NotFound("Failed to load compute graph at '",graph_file_name, "'");
+	}
+	session->reset(tensorflow::NewSession(tensorflow::SessionOptions()));
+	Status session_create_status = (*session)->Create(graph_def);
+	if (!session_create_status.ok()) {
+		return session_create_status;
+	}
+	return Status::OK();
+}
+// Analyzes the output of the Inception graph to retrieve the highest scores and
+// their positions in the tensor, which correspond to categories.
+Status GetTopLabels(const std::vector<Tensor>& outputs, int how_many_labels,Tensor* out_indices, Tensor* out_scores) {
+	const Tensor& unsorted_scores_tensor = outputs[0];
+	auto unsorted_scores_flat = unsorted_scores_tensor.flat<float>();
+	std::vector<std::pair<int, float>> scores;
+	for (int i = 0; i < unsorted_scores_flat.size(); ++i) {
+		scores.push_back(std::pair<int, float>({i, unsorted_scores_flat(i)}));
+	}
+	std::sort(scores.begin(), scores.end(),[](const std::pair<int, float>& left,const std::pair<int, float>& right) {return left.second > right.second;});
+	scores.resize(how_many_labels);
+	Tensor sorted_indices(tensorflow::DT_INT32, {scores.size()});
+	Tensor sorted_scores(tensorflow::DT_FLOAT, {scores.size()});
+	for (int i = 0; i < scores.size(); ++i) {
+		sorted_indices.flat<int>()(i) = scores[i].first;
+		sorted_scores.flat<float>()(i) = scores[i].second;
+	}
+	*out_indices = sorted_indices;
+	*out_scores = sorted_scores;
+	return Status::OK();
+}
+
+// Takes a file name, and loads a list of labels from it, one per line, and
+// returns a vector of the strings. It pads with empty strings so the length
+// of the result is a multiple of 16, because our model expects that.
+Status ReadLabelsFile(string file_name, std::vector<string>* result, size_t* found_label_count) {
+	std::ifstream file(file_name);
+	if (!file) {
+		return tensorflow::errors::NotFound("Labels file ", file_name, " not found.");
+	}
+	result->clear();
+	string line;
+	while (std::getline(file, line)) {
+		result->push_back(line);
+	}
+	*found_label_count = result->size();
+	const int padding = 16;
+	while (result->size() % padding) {
+		result->emplace_back();
+	}
+	return Status::OK();
+}
 
 /**
  * Video capture and display loop.
@@ -369,7 +442,24 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 	// creating a Tensor for storing the data
 	tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,224,224,3}));
 	auto input_tensor_mapped = input_tensor.tensor<float, 4>();
-	
+	 // First we load and initialize the model.
+	string root_dir = "/media/linaro/k1/labl";
+	string graph ="output_graph.pb";
+	string labels_file_name ="output_labels.txt";
+	std::unique_ptr<tensorflow::Session> session;
+	string graph_path = tensorflow::io::JoinPath(root_dir, graph);
+	Status load_graph_status = LoadGraph(graph_path, &session);
+	if (!load_graph_status.ok()) {
+		LOG(ERROR) << load_graph_status;
+		return -1;
+	}
+	std::vector<string> labels;
+	size_t label_count;
+	Status read_labels_status = ReadLabelsFile(labels_file_name, &labels, &label_count);
+	if (!read_labels_status.ok()) {
+		LOG(ERROR) << read_labels_status;
+	return -1;
+	}
 	gettimeofday (&t1, &tz);
 	/* Continue until an error occurs or external signal requests an exit */
 	while(!ret && !signal_quit)
@@ -400,7 +490,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 				printf("deltatimeDQBUF=%1.4f seconds buffer%d eleminated\n", deltatime2,buf.index);
 				if(frames>0)
 					frames--;
-				goto xxx;
+				goto mylabel;
 			}
 		}
 			
@@ -438,6 +528,22 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 						}
 				}
 			}
+			// Actually run the image through the model.
+			std::vector<Tensor> outputs;
+			Status run_status = session->Run({{input_layer, resized_tensor}},{output_layer}, {}, &outputs);
+			if (!run_status.ok()) {
+				LOG(ERROR) << "Running model failed: " << run_status;
+				return -1;
+			}
+
+			// Do something interesting with the results we've generated.
+			Status print_status =PrintTopLabels(outputs, labels, label_count, print_threshold * 0.01f);
+			if (!print_status.ok()) {
+				LOG(ERROR) << "Running print failed: " << print_status;
+				return -1;
+			}
+		}
+		
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[1]);
 		/*
@@ -461,7 +567,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		//if(opt->eglimage){
 			//usleep(10000);
 	//	}
-		xxx:
+		mylabel:
 		/* Requeue the last buffer, the memory should be duplicated in the GPU and no longer needed. */
 		ret = ioctl(cap->v4l2_fd, VIDIOC_QBUF, &buf);
 	}
@@ -924,59 +1030,6 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 		/* setup the display event callback functions and context */
 		disp->callbacks.key_event = do_key_event;
 		disp->callbacks.private_context = cap;
-/*		
-// Reads a model graph definition from disk, and creates a session object you
-// can use to run it.
-Status LoadGraph(string graph_file_name,
-                 std::unique_ptr<tensorflow::Session>* session) {
-  tensorflow::GraphDef graph_def;
-  Status load_graph_status =
-      ReadBinaryProto(tensorflow::Env::Default(), graph_file_name, &graph_def);
-  if (!load_graph_status.ok()) {
-    return tensorflow::errors::NotFound("Failed to load compute graph at '",
-                                        graph_file_name, "'");
-  }
-  session->reset(tensorflow::NewSession(tensorflow::SessionOptions()));
-  Status session_create_status = (*session)->Create(graph_def);
-  if (!session_create_status.ok()) {
-    return session_create_status;
-  }
-  return Status::OK();
-}		
- // First we load and initialize the model.
-  std::unique_ptr<tensorflow::Session> session;
-  string graph_path = tensorflow::io::JoinPath(root_dir, graph);
-  Status load_graph_status = LoadGraph(graph_path, &session);
-  if (!load_graph_status.ok()) {
-    LOG(ERROR) << load_graph_status;
-    return -1;
-  }
-
-  std::vector<string> labels;
-  size_t label_count;
-  Status read_labels_status =
-      ReadLabelsFile(labels_file_name, &labels, &label_count);
-  if (!read_labels_status.ok()) {
-    LOG(ERROR) << read_labels_status;
-    return -1;
-  }
-	
- // Actually run the image through the model.
-    std::vector<Tensor> outputs;
-    Status run_status = session->Run({{input_layer, resized_tensor}},
-                                     {output_layer}, {}, &outputs);
-    if (!run_status.ok()) {
-      LOG(ERROR) << "Running model failed: " << run_status;
-      return -1;
-    }
-
-    // Do something interesting with the results we've generated.
-    Status print_status =
-        PrintTopLabels(outputs, labels, label_count, print_threshold * 0.01f);
-    if (!print_status.ok()) {
-      LOG(ERROR) << "Running print failed: " << print_status;
-      return -1;
-    } 
 		/* Enter the capture display loop */
 		ret = capture_display_yuv(cap, disp, opt);
 		/* Cleanly release the buffers map and free them in the kernel on either error or exit request. */

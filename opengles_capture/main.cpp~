@@ -97,6 +97,7 @@ void usage(char * const argv[])
 	printf("-2, --im_width  the width  for texture  default=1920\n");
 	printf("-3, --im_height the height for texture  default=1080\n");
 	printf("-4 , --rgbtext  !=1 first copy image to frame buffer texture as rgb then render to display  =1 for copy to display directly\n");
+	printf("-5 , --rgbinput  !=1 camera input is rgb  =1 camera input is nv12\n");
 }
 
 /**
@@ -114,6 +115,7 @@ void set_default_options(struct options *opt)
 	opt->ddump=false;//true;
 	opt->eglimage=false;
 	opt->rgbtext=false;
+	opt->rgbinput=true;
 	if(opt->ddump){
 		opt->im_width=1920;
 		opt->im_height=1080;
@@ -155,6 +157,7 @@ int get_options(struct options *opt, int argc, char * const argv[])
 		{"im_width",			required_argument,	0, '2'},
 		{"im_height",			required_argument,	0, '3'},
 		{"rgbtext",			required_argument,	0, '4'},
+		{"rgbinput",			required_argument,	0, '5'},
 		{0},
 	};
 
@@ -162,7 +165,7 @@ int get_options(struct options *opt, int argc, char * const argv[])
 
 	while(1)
 	{	// : means required_argument
-		o = getopt_long(argc, argv, "d:s:p:n:u:hve:0:1:2:3:4:", long_options, NULL);
+		o = getopt_long(argc, argv, "d:s:p:n:u:hve:0:1:2:3:4:5:", long_options, NULL);
 		if (o == -1) break;
 
 		switch (o)
@@ -194,6 +197,10 @@ int get_options(struct options *opt, int argc, char * const argv[])
 			case 	'4':
 				if(atoi(optarg)==1)
 					opt->rgbtext=false;
+				break;
+			case 	'5':
+				if(atoi(optarg)==1)
+					opt->rgbinput=false;
 				break;
 			
 			case CAPTURE_DEV:
