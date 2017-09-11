@@ -331,16 +331,25 @@ CMakeFiles/capture.dir/capture.cpp.o
  /usr/local/include/google/tensorflow/tensorflow/core/framework/allocation_description.pb.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/allocator.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/attr_value.pb.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/attr_value_util.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/bfloat16.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/cost_graph.pb.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/device_attributes.pb.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/function.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/function.pb.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/graph.pb.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/node_def.pb.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/node_def_builder.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/node_def_util.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/numeric_types.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/op.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/op_def.pb.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/op_def_builder.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/op_def_util.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/partial_tensor_shape.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/resource_handle.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/resource_handle.pb.h
+ /usr/local/include/google/tensorflow/tensorflow/core/framework/selective_registration.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/step_stats.pb.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/tensor.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/tensor.pb.h
@@ -355,17 +364,31 @@ CMakeFiles/capture.dir/capture.cpp.o
  /usr/local/include/google/tensorflow/tensorflow/core/framework/variant.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/variant_tensor_data.h
  /usr/local/include/google/tensorflow/tensorflow/core/framework/versions.pb.h
+ /usr/local/include/google/tensorflow/tensorflow/core/graph/default_device.h
+ /usr/local/include/google/tensorflow/tensorflow/core/graph/edgeset.h
+ /usr/local/include/google/tensorflow/tensorflow/core/graph/graph.h
+ /usr/local/include/google/tensorflow/tensorflow/core/graph/graph_def_builder.h
+ /usr/local/include/google/tensorflow/tensorflow/core/graph/node_builder.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/core/arena.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/core/error_codes.pb.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/core/errors.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/core/refcount.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/core/status.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/core/stringpiece.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/core/threadpool.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/gtl/array_slice.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/gtl/array_slice_internal.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/gtl/flatmap.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/gtl/flatrep.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/gtl/inlined_vector.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/gtl/iterator_range.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/gtl/manual_constructor.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/hash/hash.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/io/path.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/strings/numbers.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/strings/str_util.h
  /usr/local/include/google/tensorflow/tensorflow/core/lib/strings/strcat.h
+ /usr/local/include/google/tensorflow/tensorflow/core/lib/strings/stringprintf.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/cpu_info.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/default/dynamic_annotations.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/default/integral_types.h
@@ -378,11 +401,13 @@ CMakeFiles/capture.dir/capture.cpp.o
  /usr/local/include/google/tensorflow/tensorflow/core/platform/env_time.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/file_statistics.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/file_system.h
+ /usr/local/include/google/tensorflow/tensorflow/core/platform/init_main.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/logging.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/macros.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/mem.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/mutex.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/platform.h
+ /usr/local/include/google/tensorflow/tensorflow/core/platform/prefetch.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/protobuf.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/thread_annotations.h
  /usr/local/include/google/tensorflow/tensorflow/core/platform/types.h
@@ -393,6 +418,7 @@ CMakeFiles/capture.dir/capture.cpp.o
  /usr/local/include/google/tensorflow/tensorflow/core/protobuf/rewriter_config.pb.h
  /usr/local/include/google/tensorflow/tensorflow/core/public/session.h
  /usr/local/include/google/tensorflow/tensorflow/core/public/session_options.h
+ /usr/local/include/google/tensorflow/tensorflow/core/util/command_line_flags.h
  /usr/local/include/google/tensorflow/third_party/eigen3/unsupported/Eigen/CXX11/FixedPoint
  /usr/local/include/google/tensorflow/third_party/eigen3/unsupported/Eigen/CXX11/Tensor
  /usr/local/include/google/tensorflow/third_party/eigen3/unsupported/Eigen/CXX11/src/FixedPoint/FixedPointTypes.h

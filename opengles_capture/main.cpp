@@ -109,7 +109,7 @@ void set_default_options(struct options *opt)
 	opt->capture_count = DEFAULT_COUNT;
 	opt->dev_name = (char*)DEFAULT_DEVICE;
 	opt->subdev_name = (char*)DEFAULT_SUBDEVICE;
-	opt->buffer_count = DEFAULT_BUFFER_COUNT;
+	opt->buffer_count = 3;//DEFAULT_BUFFER_COUNT;
 	opt->program_use = opt->default_usage;
 	opt->dma_export = false;//true;
 	opt->ddump=false;//true;

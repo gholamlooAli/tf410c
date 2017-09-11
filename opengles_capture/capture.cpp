@@ -55,7 +55,7 @@
  #endif
  #ifdef Status
  #undef Status
-  #endif
+ #endif
   #ifdef  None
  #undef None
   #endif
@@ -65,10 +65,29 @@
   #ifdef BadColor
  #undef BadColor
   #endif
-  
-#include "tensorflow/core/public/session.h"
-#include "tensorflow/core/platform/env.h"
+  #include <fstream>
+  #include <vector>
+  #include "tensorflow/core/framework/graph.pb.h"
 #include "tensorflow/core/framework/tensor.h"
+#include "tensorflow/core/graph/default_device.h"
+#include "tensorflow/core/graph/graph_def_builder.h"
+#include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/lib/core/stringpiece.h"
+#include "tensorflow/core/lib/core/threadpool.h"
+#include "tensorflow/core/lib/io/path.h"
+#include "tensorflow/core/lib/strings/stringprintf.h"
+#include "tensorflow/core/platform/init_main.h"
+#include "tensorflow/core/platform/logging.h"
+#include "tensorflow/core/platform/types.h"
+#include "tensorflow/core/public/session.h"
+#include "tensorflow/core/util/command_line_flags.h"
+#include "tensorflow/core/platform/env.h"
+// These are all common classes it's handy to reference with no namespace.
+using tensorflow::Flag;
+using tensorflow::Tensor;
+using tensorflow::Status;
+using tensorflow::string;
+using tensorflow::int32;
 
 int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb){
 	unsigned char yy,uu,vv;
@@ -90,7 +109,9 @@ int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb)
 			fr=ym16+(1.3707 * vm128);
 			fg=ym16- (0.6980 * vm128) - (0.3376*um128);
 			fb=ym16+(1.7324 * um128);
-			
+			//fr=((ym16+(1.3707 * vm128))-128)/128;
+			//fg=((ym16- (0.6980 * vm128) - (0.3376*um128))-128)/128;
+			//fb=((ym16+(1.7324 * um128))-128)/128
 			if(fr>255)
 				fr=255;
 			if(fr<0)
@@ -105,9 +126,11 @@ int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb)
 				fb=255;
 			if(fb<0)
 				fb=0;
-			//fr=255.0;
-			//fg=1.0;
-			//fb=0.0;
+			if(i==224 || i==225 || j==224 || j==225){
+				fr=255.0;
+				fg=0.0;
+				fb=0.0;
+			}
 			*prgb=(unsigned char) fr;
 			prgb++;
 			*prgb=(unsigned char) fg;
@@ -398,6 +421,28 @@ Status ReadLabelsFile(string file_name, std::vector<string>* result, size_t* fou
 	return Status::OK();
 }
 
+// Given the output of a model run, and the name of a file containing the labels
+// this prints out the top five highest-scoring values.
+Status PrintTopLabels(const std::vector<Tensor>& outputs,const std::vector<string>& labels, int label_count, float print_threshold) {
+	const int how_many_labels = std::min(5, static_cast<int>(label_count));
+	Tensor indices;
+	Tensor scores;
+	TF_RETURN_IF_ERROR(GetTopLabels(outputs, how_many_labels, &indices, &scores));
+	tensorflow::TTypes<float>::Flat scores_flat = scores.flat<float>();
+	tensorflow::TTypes<int32>::Flat indices_flat = indices.flat<int32>();
+	for (int pos = 0; pos < how_many_labels; ++pos) {
+		const int label_index = indices_flat(pos);
+		const float score = scores_flat(pos);
+		std::cout << labels[label_index] << " (" << label_index << "): " << score<<" \t";
+		// Print the top label to stdout if it's above a threshold.
+		if ((pos == 0) && (score > print_threshold)) {
+			//std::cout << labels[label_index] << std::endl;
+		}
+	}
+	std::cout << std::endl;
+	return Status::OK();
+}
+
 /**
  * Video capture and display loop.
  * Dequeue v4l2 buffers, send the mapped buffers to render then re-queue the buffer.
@@ -407,9 +452,9 @@ Status ReadLabelsFile(string file_name, std::vector<string>* result, size_t* fou
  */
 int capture_display_yuv(struct capture_context *cap, struct display_context *disp, struct options* opt)
 {
-	struct timeval t1, t2,t3,t4,t5,t6;
+	struct timeval t1, t2,t3,t4,t5,t6,t7,t8,t9;
 	struct timezone tz;
-	float deltatime,deltatime2,deltatime3,totaltime=0.0f,totaltime3=0.0f;
+	float deltatime,deltatime2,deltatime3,deltatime4,deltatime5,deltatime6,totaltime=0.0f,totaltime3=0.0f;
 	unsigned int frames=0;
 	
 	int ret = 0;
@@ -446,6 +491,9 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 	string root_dir = "/media/linaro/k1/labl";
 	string graph ="output_graph.pb";
 	string labels_file_name ="output_labels.txt";
+	string input_layer = "input";
+	string output_layer = "final_result";
+	int print_threshold = 50;
 	std::unique_ptr<tensorflow::Session> session;
 	string graph_path = tensorflow::io::JoinPath(root_dir, graph);
 	Status load_graph_status = LoadGraph(graph_path, &session);
@@ -482,9 +530,9 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 			LOGS_ERR("DQBUF: %d - %s", errno, strerror(errno));
 			return errno;
 		}
-		gettimeofday (&t6, &tz);
-		deltatime2 = (float)(t6.tv_sec - t5.tv_sec + (t6.tv_usec - t5.tv_usec) * 1e-6);
 		if(opt->eglimage){
+			gettimeofday (&t6, &tz);
+			deltatime2 = (float)(t6.tv_sec - t5.tv_sec + (t6.tv_usec - t5.tv_usec) * 1e-6);
 			int ii=(int)(deltatime2*200.0);
 			if(ii==0){
 				printf("deltatimeDQBUF=%1.4f seconds buffer%d eleminated\n", deltatime2,buf.index);
@@ -509,13 +557,17 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 			//disp->render_ctx.buffers[1] = (1280*960)+cap->buffers[buf.index].addr[0];
 		}
 		if(opt->rgbinput){
+			gettimeofday (&t5, &tz);
 			conv_nv12_rgb((unsigned char *)disp->render_ctx.buffers[0], (unsigned char *)disp->render_ctx.buffers[1], &disp->render_ctx.rgbbuf[0]);
+			gettimeofday (&t6, &tz);
+			deltatime2 = (float)(t6.tv_sec - t5.tv_sec + (t6.tv_usec - t5.tv_usec) * 1e-6);
+			
 			int height = 224;
 			int width = 224;
 			int width2 = 320;
 			int depth=3;
-			int mean = 128;
-			int std = 128;
+			float mean = 128;
+			float std = 128;
 			
 			const unsigned char * source_data = &disp->render_ctx.rgbbuf[0];
 			for (int y = 0; y < height; ++y) {
@@ -524,26 +576,33 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 					const unsigned char* source_pixel = source_row + (x * depth);
 						for (int c = 0; c < depth; ++c) {
 							const unsigned char* source_value = source_pixel + c;
-							input_tensor_mapped(0, y, x, c) = (float) *source_value;
+							input_tensor_mapped(0, y, x, c) = (((float) *source_value)-mean)/std;
 						}
 				}
 			}
+//			printf("pic=%u %u %u  , %f  %f  %f\n",disp->render_ctx.rgbbuf[0+320*3*5],disp->render_ctx.rgbbuf[1+320*3*5],disp->render_ctx.rgbbuf[2+320*3*5],input_tensor_mapped(0, 5, 0, 0),input_tensor_mapped(0, 5, 0, 1),input_tensor_mapped(0, 5, 0, 2));
+			gettimeofday (&t7, &tz);
+			deltatime3 = (float)(t7.tv_sec - t6.tv_sec + (t7.tv_usec - t6.tv_usec) * 1e-6);
+			//const Tensor& resized_tensor = input_tensor[0];
 			// Actually run the image through the model.
 			std::vector<Tensor> outputs;
-			Status run_status = session->Run({{input_layer, resized_tensor}},{output_layer}, {}, &outputs);
+			Status run_status = session->Run({{input_layer, input_tensor}},{output_layer}, {}, &outputs);
 			if (!run_status.ok()) {
 				LOG(ERROR) << "Running model failed: " << run_status;
 				return -1;
 			}
-
+			gettimeofday (&t8, &tz);
+			deltatime4 = (float)(t8.tv_sec - t7.tv_sec + (t8.tv_usec - t7.tv_usec) * 1e-6);
 			// Do something interesting with the results we've generated.
 			Status print_status =PrintTopLabels(outputs, labels, label_count, print_threshold * 0.01f);
 			if (!print_status.ok()) {
 				LOG(ERROR) << "Running print failed: " << print_status;
 				return -1;
 			}
+			gettimeofday (&t9, &tz);
+			deltatime5 = (float)(t9.tv_sec - t8.tv_sec + (t9.tv_usec - t8.tv_usec) * 1e-6);
 		}
-		
+//		printf("convert =%1.4f  load tensor=%1.4f  run model=%1.4f   secprint label=%1.4f sec\n", deltatime2, deltatime3, deltatime4, deltatime5);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[1]);
 		/*
@@ -1037,18 +1096,3 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 
 		return ret;
 }
-/*
-tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT,tensorflow::TensorShape({1, height, width, depth}));
-auto input_tensor_mapped = input_tensor.tensor<float, 4>();
-
-const float* source_data = some_structure.imageData;
-for (int y = 0; y < height; ++y) {
-    const float* source_row = source_data + (y * width * depth);
-    for (int x = 0; x < width; ++x) {
-        const float* source_pixel = source_row + (x * depth);
-        for (int c = 0; c < depth; ++c) {
-           const float* source_value = source_pixel + c;
-           input_tensor_mapped(0, y, x, c) = *source_value;
-        }
-    }
-}*/
