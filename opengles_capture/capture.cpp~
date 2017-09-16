@@ -580,7 +580,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 						}
 				}
 			}
-			printf("pic=%u %u %u  , %f  %f  %f\n",disp->render_ctx.rgbbuf[0+320*3*5],disp->render_ctx.rgbbuf[1+320*3*5],disp->render_ctx.rgbbuf[2+320*3*5],input_tensor_mapped(0, 5, 0, 0),input_tensor_mapped(0, 5, 0, 1),input_tensor_mapped(0, 5, 0, 2));
+//			printf("pic=%u %u %u  , %f  %f  %f\n",disp->render_ctx.rgbbuf[0+320*3*5],disp->render_ctx.rgbbuf[1+320*3*5],disp->render_ctx.rgbbuf[2+320*3*5],input_tensor_mapped(0, 5, 0, 0),input_tensor_mapped(0, 5, 0, 1),input_tensor_mapped(0, 5, 0, 2));
 			gettimeofday (&t7, &tz);
 			deltatime3 = (float)(t7.tv_sec - t6.tv_sec + (t7.tv_usec - t6.tv_usec) * 1e-6);
 			//const Tensor& resized_tensor = input_tensor[0];
@@ -602,7 +602,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 			gettimeofday (&t9, &tz);
 			deltatime5 = (float)(t9.tv_sec - t8.tv_sec + (t9.tv_usec - t8.tv_usec) * 1e-6);
 		}
-		printf("convert =%1.4f  load tensor=%1.4f  run model=%1.4f   secprint label=%1.4f sec\n", deltatime2, deltatime3, deltatime4, deltatime5);
+//		printf("convert =%1.4f  load tensor=%1.4f  run model=%1.4f   secprint label=%1.4f sec\n", deltatime2, deltatime3, deltatime4, deltatime5);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[1]);
 		/*

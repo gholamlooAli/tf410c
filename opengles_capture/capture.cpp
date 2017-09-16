@@ -602,7 +602,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 			gettimeofday (&t9, &tz);
 			deltatime5 = (float)(t9.tv_sec - t8.tv_sec + (t9.tv_usec - t8.tv_usec) * 1e-6);
 		}
-//		printf("convert =%1.4f  load tensor=%1.4f  run model=%1.4f   secprint label=%1.4f sec\n", deltatime2, deltatime3, deltatime4, deltatime5);
+		printf("convert =%1.4f  load tensor=%1.4f  run model=%1.4f   secprint label=%1.4f sec\n", deltatime2, deltatime3, deltatime4, deltatime5);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[1]);
 		/*
