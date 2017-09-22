@@ -1,13 +1,13 @@
-set(CMAKE_HOST_SYSTEM "Linux-4.9.34-linaro-lt-qcom")
+set(CMAKE_HOST_SYSTEM "Linux-3.18-ifc6601-v0.4")
 set(CMAKE_HOST_SYSTEM_NAME "Linux")
-set(CMAKE_HOST_SYSTEM_VERSION "4.9.34-linaro-lt-qcom")
+set(CMAKE_HOST_SYSTEM_VERSION "3.18-ifc6601-v0.4")
 set(CMAKE_HOST_SYSTEM_PROCESSOR "aarch64")
 
 
 
-set(CMAKE_SYSTEM "Linux-4.9.34-linaro-lt-qcom")
+set(CMAKE_SYSTEM "Linux-3.18-ifc6601-v0.4")
 set(CMAKE_SYSTEM_NAME "Linux")
-set(CMAKE_SYSTEM_VERSION "4.9.34-linaro-lt-qcom")
+set(CMAKE_SYSTEM_VERSION "3.18-ifc6601-v0.4")
 set(CMAKE_SYSTEM_PROCESSOR "aarch64")
 
 set(CMAKE_CROSSCOMPILING "FALSE")

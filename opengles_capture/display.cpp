@@ -54,16 +54,22 @@ PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
  * Shaders included in code for simplicity but could be external files.
  */
 static const char nv12_vertex_code[] =
-	"#version 300 es\n"
+	//"#version 300 es\n"
 	"//VERTEX_SHADER\n"
-	"layout(location = 0) in vec4 a_position;\n"
-	"layout(location = 1) in vec2 a_tex_coord;\n"
-	"out vec2 v_tex_coord;\n"
+	//"layout(location = 0) in vec4 a_position;\n"
+	//"layout(location = 1) in vec2 a_tex_coord;\n"
+	//"out vec2 v_tex_coord;\n"
+	
+	"attribute vec4 a_position;\n"
+	"attribute vec2 a_tex_coord;\n"
+	"varying vec2 v_tex_coord;\n"
+	
 	"void main()\n"
 	"{\n"
 	"   gl_Position = a_position;\n"
 	"   v_tex_coord = a_tex_coord;\n"
 	"}\n";
+	
 
 
  
@@ -224,7 +230,7 @@ int egl_init(struct display_context *disp)
 		EGL_STENCIL_SIZE, 0,
 		EGL_ALPHA_SIZE, 0,
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
 		EGL_NONE };
 
 		/* Two X11 categories on dragonboard
@@ -467,7 +473,12 @@ int render_nv12m_subs_tex(struct display_context *disp, struct options* opt, str
 	//glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, disp->width, disp->height,GL_LUMINANCE, GL_UNSIGNED_BYTE, disp->render_ctx.buffers[0]);
 		glBindTexture(GL_TEXTURE_2D, disp->texture[0]);
 		if(opt->ddump){
-			glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, opt->im_width, opt->im_height, /*disp->width,disp->height,*/GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, disp->render_ctx.buffers[0]);
+			if(opt->rgbinput){
+				glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, opt->im_width, opt->im_height, /*disp->width,disp->height,*/GL_RGB, GL_UNSIGNED_BYTE, &disp->render_ctx.rgbbuf[0]);
+			}
+			else{
+				glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, opt->im_width, opt->im_height, /*disp->width,disp->height,*/GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, disp->render_ctx.buffers[0]);
+			}
 		}
 		else{
 			if(opt->rgbinput){
@@ -692,8 +703,15 @@ int camera_nv12m_setup(struct display_context* disp, struct render_context *rend
 			
 		}
 		else{
-			GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "uyvy_to_rgb_texture.glsl"));
+			if(opt->splane){
+				GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "frgb_input_render_es1.glsl"));
+				//GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "yuyv_to_rgb_texture.glsl"));
+			}
+			else{
+				GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "uyvy_to_rgb_texture.glsl"));
+			}
 		}
+		
 	}
 	else{
 		if(opt->rgbinput){
@@ -711,7 +729,12 @@ int camera_nv12m_setup(struct display_context* disp, struct render_context *rend
 	}
 	if(opt->rgbtext)
 	{
-		GCHK(disp->program[1] = gles_load_program(nv12_vertex_code, "frgb_render.glsl"));
+		if(opt->splane){
+			GCHK(disp->program[1] = gles_load_program(nv12_vertex_code, "frgb_render_es1.glsl"));
+		}
+		else{
+			GCHK(disp->program[1] = gles_load_program(nv12_vertex_code, "frgb_render.glsl"));
+		}
 		GCHK(disp->location[5] = glGetUniformLocation(disp->program[1], "uimage_width"));
 		GCHK(disp->location[6] = glGetUniformLocation(disp->program[1], "uimage_height"));
 		GCHK(disp->location[7] = glGetUniformLocation(disp->program[1], "s_luma_texture"));
@@ -776,8 +799,14 @@ int camera_nv12m_setup(struct display_context* disp, struct render_context *rend
 	glBindTexture(GL_TEXTURE_2D, disp->texture[0]);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	if(opt->ddump){
-		GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width,opt->im_height,/*disp->width, disp->height,*/ 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
-		setTexParam2();
+		if(opt->rgbinput){
+			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,opt->im_width,opt->im_height,/*disp->width, disp->height,*/ 0, GL_RGB, GL_UNSIGNED_BYTE, NULL));
+			setTexParam();
+		}
+		else{
+			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width,opt->im_height,/*disp->width, disp->height,*/ 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
+			setTexParam2();
+		}
 	}
 	else{
 		if(opt->rgbinput){

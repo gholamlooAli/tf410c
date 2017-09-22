@@ -4,10 +4,10 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/media/linaro/k1/tf410c/opengles_capture/capture.cpp" "/media/linaro/k1/tf410c/opengles_capture/build/CMakeFiles/capture.dir/capture.cpp.o"
-  "/media/linaro/k1/tf410c/opengles_capture/display.cpp" "/media/linaro/k1/tf410c/opengles_capture/build/CMakeFiles/capture.dir/display.cpp.o"
-  "/media/linaro/k1/tf410c/opengles_capture/gles_egl_util.cpp" "/media/linaro/k1/tf410c/opengles_capture/build/CMakeFiles/capture.dir/gles_egl_util.cpp.o"
-  "/media/linaro/k1/tf410c/opengles_capture/main.cpp" "/media/linaro/k1/tf410c/opengles_capture/build/CMakeFiles/capture.dir/main.cpp.o"
+  "/home/linaro/tf410c/opengles_capture/capture.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/capture.cpp.o"
+  "/home/linaro/tf410c/opengles_capture/display.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/display.cpp.o"
+  "/home/linaro/tf410c/opengles_capture/gles_egl_util.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/gles_egl_util.cpp.o"
+  "/home/linaro/tf410c/opengles_capture/main.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

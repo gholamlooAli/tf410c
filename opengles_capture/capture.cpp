@@ -65,7 +65,7 @@
   #ifdef BadColor
  #undef BadColor
   #endif
-  #include <fstream>
+  /*
   #include <vector>
   #include "tensorflow/core/framework/graph.pb.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -88,7 +88,41 @@ using tensorflow::Tensor;
 using tensorflow::Status;
 using tensorflow::string;
 using tensorflow::int32;
+*/
 
+  //ali
+  #include <assert.h>
+#include <iostream>
+#include <vector>
+#include "tensorflow/c/c_api.h"
+  #include <fstream>
+/*
+  TF_Buffer* read_file(const char* file); 
+void free_buffer(void* data, size_t length) {                                             
+        free(data);  
+}
+static void Deallocator(void* data, size_t length, void* arg) {
+        free(data);
+        // *reinterpret_cast<bool*>(arg) = true;
+}
+TF_Buffer* read_file(const char* file) {                                                  
+  FILE *f = fopen(file, "rb");
+  fseek(f, 0, SEEK_END);
+  long fsize = ftell(f);                                                                  
+  fseek(f, 0, SEEK_SET);  //same as rewind(f);                                            
+
+  void* data = malloc(fsize);                                                             
+  fread(data, fsize, 1, f);
+  fclose(f);
+
+  TF_Buffer* buf = TF_NewBuffer();                                                        
+  buf->data = data;
+  buf->length = fsize;                                                                    
+  buf->data_deallocator = free_buffer;                                                    
+  return buf;
+} 
+  //ali
+ */ 
 int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb){
 	unsigned char yy,uu,vv;
 	float fr,fg,fb,ym16,um128,vm128;
@@ -150,6 +184,84 @@ int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb)
 	
 	return 0;
 }
+int conv_yuyv_rgb(unsigned char * py, int width, int height, unsigned char * prgb, float* ppfrgb){
+	unsigned char yy,uu,vv;
+	float fr,fg,fb,ym16,um128,vm128;
+	float* pfrgb;
+	pfrgb=ppfrgb;
+	for (int j=0; j<height;j++){
+		
+		for (int i=0; i<width;i++){
+			yy=*py;
+			py++;
+			if(i%2==0){
+				uu=*py;
+				vv=*(py+2);
+			}
+			else{
+				uu=*(py-2);
+				vv=*py;
+			}
+			py++;
+			um128=(float)uu-128;
+			vm128=(float)vv-128;
+			
+			ym16=(float)yy-16;
+			
+			fr=ym16+(1.3707 * vm128);
+			fg=ym16- (0.6980 * vm128) - (0.3376*um128);
+			fb=ym16+(1.7324 * um128);
+			//fr=((ym16+(1.3707 * vm128))-128)/128;
+			//fg=((ym16- (0.6980 * vm128) - (0.3376*um128))-128)/128;
+			//fb=((ym16+(1.7324 * um128))-128)/128
+			if(fr>255)
+				fr=255;
+			if(fr<0)
+				fr=0;
+			
+			if(fg>255)
+				fg=255;
+			if(fg<0)
+				fg=0;
+			
+			if(fb>255)
+				fb=255;
+			if(fb<0)
+				fb=0;
+			if(i==224 || i==225 || j==224 || j==225){
+				fr=255.0;
+				fg=0.0;
+				fb=0.0;
+			}
+			*prgb=(unsigned char) fr;
+			prgb++;
+			
+			*prgb=(unsigned char) fg;
+			prgb++;
+			
+			*prgb=(unsigned char) fb;
+			prgb++;
+			float mean=128.0;
+			float std=128.0;
+			if(i<224){
+				if(j<224){
+					*pfrgb = (fr-mean)/std;
+					pfrgb++;
+					*pfrgb = (fg-mean)/std;
+					pfrgb++;
+					*pfrgb=  (fb-mean)/std;
+					pfrgb++;
+					}
+			}
+			
+		}
+		
+	}
+
+	
+	
+	return 0;
+}
 /**
  * Exit signal control to free kernel buffers.
  * volatile to ensure that the variable is not optimized out.
@@ -163,25 +275,41 @@ static volatile int signal_quit = 0;
  * @param buf Pointer to V4L2 buffer allocation.
  * @param type V4L2 memory type used for the buffer.
  */
-void print_v4l2_buffer(struct v4l2_buffer *buf, uint32_t type)
+void print_v4l2_buffer(struct v4l2_buffer *buf, uint32_t type, struct options* opt)
 {
 	LOGS_DBG("Buffer #%d", buf->index);
 
 	LOGS_DBG("\ttype:   %d", buf->type);
 	LOGS_DBG("\tmemory: %d", buf->memory);
-	if (buf->m.planes != 0)
-	{
-		for (unsigned int p = 0; p < buf->length; p++)
+	if(opt->splane){
+		for (int p = 0; p < opt->num_buf; p++)
 		{
-			LOGS_DBG("\t - Plane#: %d",  p);
-			LOGS_DBG("\t - used:   %d",  buf->m.planes[p].bytesused);
-			LOGS_DBG("\t - length: %d",  buf->m.planes[p].length);
+			LOGS_DBG("\t - used:   %d",  buf->bytesused);
+			LOGS_DBG("\t - length: %d",  buf->length);
 			if (type == V4L2_MEMORY_MMAP) {
-				LOGS_DBG("\t - offset: %d",  buf->m.planes[p].m.mem_offset);
+				LOGS_DBG("\t - offset: %d",  buf->m.offset);
 			} else if (type == V4L2_MEMORY_USERPTR) {
-				LOGS_DBG("\t - usrptr: %lu", buf->m.planes[p].m.userptr);
+				LOGS_DBG("\t - usrptr: %lu", buf->m.userptr);
 			} else if (type == V4L2_MEMORY_DMABUF) {
-				LOGS_DBG("\t - fd:     %d",  buf->m.planes[p].m.fd);
+				LOGS_DBG("\t - fd:     %d",  buf->m.fd);
+			}
+		}
+	}
+	else{
+		if (buf->m.planes != 0)
+		{
+			for (unsigned int p = 0; p < buf->length; p++)
+			{
+				LOGS_DBG("\t - Plane#: %d",  p);
+				LOGS_DBG("\t - used:   %d",  buf->m.planes[p].bytesused);
+				LOGS_DBG("\t - length: %d",  buf->m.planes[p].length);
+				if (type == V4L2_MEMORY_MMAP) {
+					LOGS_DBG("\t - offset: %d",  buf->m.planes[p].m.mem_offset);
+				} else if (type == V4L2_MEMORY_USERPTR) {
+					LOGS_DBG("\t - usrptr: %lu", buf->m.planes[p].m.userptr);
+				} else if (type == V4L2_MEMORY_DMABUF) {
+					LOGS_DBG("\t - fd:     %d",  buf->m.planes[p].m.fd);
+				}
 			}
 		}
 	}
@@ -251,7 +379,7 @@ int unmap_buffers(struct capture_context *cap)
  * @param dma_export Flag to request that DMA exports for each plane are performed.
  * @return error status of the map. Value 0 is returned on success.
  */
-int map_buffers(struct capture_context *cap, bool dma_export)
+int map_buffers(struct capture_context *cap, bool dma_export, struct options* opt)
 {
 	struct v4l2_buffer *buf;
 	struct v4l2_exportbuffer dma_buf;
@@ -267,7 +395,10 @@ int map_buffers(struct capture_context *cap, bool dma_export)
 		/** For each allocated buffer, request the v4l2 information */
 		buf = &cap->buffers[i].v4l2buf;
 		buf->m.planes = cap->buffers[i].v4l2planes;
-		buf->length = cap->num_buf;
+		if(!opt->splane)
+			buf->length = cap->num_buf;
+		else
+			opt->num_buf= cap->num_buf;
 		buf->type = cap->type;
 		buf->memory = cap->memory;
 		buf->index = i;
@@ -279,16 +410,22 @@ int map_buffers(struct capture_context *cap, bool dma_export)
 			return ret;
 		}
 
-		print_v4l2_buffer(buf, cap->type);
+		print_v4l2_buffer(buf, cap->type, opt);
 		for (int p = 0; p < cap->num_planes; p++)
 		{
 			/* Separately memory map each plane to its own user space address */
-			cap->buffers[i].length[p] = buf->m.planes[p].length;
-			LOGS_DBG("buf->m.planes[p].length=%d   cap->v4l2_fd=%d", buf->m.planes[p].length, cap->v4l2_fd);
+			if(opt->splane){
+				cap->buffers[i].length[p] = buf->length;
+				LOGS_DBG("single plane buf->length=%d   buf->m.offset=%d  cap->v4l2_fd=%d", buf->length, buf->m.offset, cap->v4l2_fd);
 	
-			cap->buffers[i].addr[p] = mmap(NULL, buf->m.planes[p].length,
-				PROT_READ | PROT_WRITE, MAP_SHARED,
-				cap->v4l2_fd, buf->m.planes[p].m.mem_offset);
+				cap->buffers[i].addr[p] = mmap(NULL, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, cap->v4l2_fd, buf->m.offset);
+			}
+			else{
+				cap->buffers[i].length[p] = buf->m.planes[p].length;
+				LOGS_DBG("buf->m.planes[p].length=%d   cap->v4l2_fd=%d", buf->m.planes[p].length, cap->v4l2_fd);
+	
+				cap->buffers[i].addr[p] = mmap(NULL, buf->m.planes[p].length, PROT_READ | PROT_WRITE, MAP_SHARED, cap->v4l2_fd, buf->m.planes[p].m.mem_offset);
+			}
 			if (cap->buffers[i].addr[p] == MAP_FAILED)
 			{
 				LOGS_ERR("Unable to mmap buffer. Error #%d: %s", errno, strerror(errno));
@@ -347,9 +484,12 @@ int queue_buffers(int fd, int count, struct video_buf_map buffers[])
  * @param fd file descriptor for the V4L2 device.
  * @return error status of the function. Value 0 is returned on success.
  */
-int start_stream(int fd)
+int start_stream(int fd, struct options* opt)
 {
 	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+	if(opt->splane){
+		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	}
 	return ioctl(fd, VIDIOC_STREAMON, &type);
 }
 
@@ -358,11 +498,15 @@ int start_stream(int fd)
  * @param fd file descriptor for the V4L2 device.
  * @return error status of the function. Value 0 is returned on success.
  */
-int stop_stream(int fd)
+int stop_stream(int fd, struct options* opt)
 {
 	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+	if(opt->splane){
+		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	}
 	return ioctl(fd, VIDIOC_STREAMOFF, &type);
 }
+/*
 // Reads a model graph definition from disk, and creates a session object you
 // can use to run it.
 Status LoadGraph(string graph_file_name, std::unique_ptr<tensorflow::Session>* session) {
@@ -442,6 +586,7 @@ Status PrintTopLabels(const std::vector<Tensor>& outputs,const std::vector<strin
 	std::cout << std::endl;
 	return Status::OK();
 }
+*/
 
 /**
  * Video capture and display loop.
@@ -450,13 +595,19 @@ Status PrintTopLabels(const std::vector<Tensor>& outputs,const std::vector<strin
  * @param disp Display Data management structure with GPU handles.
  * @return error status of the function. Value 0 is returned on success.
  */
-int capture_display_yuv(struct capture_context *cap, struct display_context *disp, struct options* opt)
+int capture_display_yuv(struct capture_context *cap, struct display_context *disp, struct options* opt,
+	TF_Session* session, const TF_Output* inputs, TF_Tensor* const* input_values, 
+	int ninputs,const TF_Output* outputs, TF_Tensor** output_values, int noutputs)
+
+    // RunOptions// Input tensors    // Output tensors    // Target operations    // RunMetadata    // Output status
+	//session, nullptr, &inputs[0], &input_values[0], inputs.size(),
+        //      &outputs[0], &output_values[0], outputs.size(), nullptr, 0, nullptr, status
 {
 	struct timeval t1, t2,t3,t4,t5,t6,t7,t8,t9;
 	struct timezone tz;
 	float deltatime,deltatime2,deltatime3,deltatime4,deltatime5,deltatime6,totaltime=0.0f,totaltime3=0.0f;
 	unsigned int frames=0;
-	
+	TF_Status* status = TF_NewStatus(); 
 	int ret = 0;
 	struct v4l2_buffer buf;
 	struct v4l2_plane planes[VIDEO_MAX_PLANES];
@@ -464,9 +615,11 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 	/* initilize the buffer type reference to hold the dequeued buffer info. */
 	buf.type = cap->type;
 	buf.memory = cap->memory;
-	buf.length = cap->num_planes;
-	buf.m.planes = planes;
-
+	if(!opt->splane){
+		buf.length = cap->num_planes;
+		buf.m.planes = planes;
+	}
+	
 	/* Select an empty buffer for priming the video display */
 	disp->render_ctx.num_buffers = cap->num_planes;
 	disp->render_ctx.texture_width=opt->im_width;
@@ -475,7 +628,8 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 	{
 		disp->render_ctx.buffers[i] = cap->buffers[0].addr[i];
 	}
-	disp->render_ctx.buffers[1]=disp->render_ctx.buffers[0]+(opt->im_width*opt->im_height);
+	if(!opt->splane)
+		disp->render_ctx.buffers[1]=disp->render_ctx.buffers[0]+(opt->im_width*opt->im_height);
 	/* Setup the OpenGL display, disp->render will be assigned for future display calls */
 	ret = camera_nv12m_setup(disp, &disp->render_ctx, opt, cap);
 	if (ret)
@@ -483,12 +637,84 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		LOGS_ERR("Error setting up display aborting capture");
 		return -1;
 	}
+	/*
+	//---------------------------------------------------------------------------------------
+	// Graph definition from unzipped https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
+	  // which is used in the Go, Java and Android examples                                   
+	  TF_Buffer* graph_def = read_file("/home/linaro/label/output_graph.pb");                      
+	  TF_Graph* graph = TF_NewGraph();
+	// Import graph_def into graph                                                          
+	  TF_Status* status = TF_NewStatus();                                                     
+	  TF_ImportGraphDefOptions* opts = TF_NewImportGraphDefOptions();                         
+	  TF_GraphImportGraphDef(graph, graph_def, opts, status);
+	  TF_DeleteImportGraphDefOptions(opts);
+	  if (TF_GetCode(status) != TF_OK) {
+		  fprintf(stderr, "ERROR: Unable to import graph %s", TF_Message(status));        
+		  return 1;
+	  }       
+	  fprintf(stdout, "Successfully imported graph");
+	  // Setup graph inputs
+	std::vector<TF_Output> inputs;
+	std::vector<TF_Tensor*> input_values;
 
+	// Add the placeholders you would like to feed, e.g.:
+	TF_Operation* placeholder = TF_GraphOperationByName(graph, "input");
+	inputs.push_back({placeholder, 0});
+*/
+/*	// Create a new tensor pointing to that memory:
+	int 	inputwidth=224;
+	int	inputheight=224;
+	int 	*imNumPt = new int(1);
+	const 	int64_t tensorDims[4] = {1,inputheight,inputwidth,3};
+	const 	int 	num_bytes=inputheight * inputwidth * 3* sizeof(float);
+	const int num_bytes_out = 5 * sizeof(float);
+
+	int64_t out_dims[] = {1, 5};
+	float mmf[224*224*3];
+/*
+	TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, &disp->render_ctx.f_rgbbuf[0],num_bytes , NULL, imNumPt);
+	input_values.push_back(tensor);
+	// Optionally, you can check that your input_op and input tensors are correct
+	  // by using some of the functions provided by the C API.
+	  std::cout << "Input op info: " << TF_OperationNumOutputs(placeholder) << "\n";
+	  std::cout << "Input data info: " << TF_Dim(tensor, 0) << "\n";
+	fprintf(stdout, "success 1"); 
+
+	// Setup graph outputs
+	std::vector<TF_Output> outputs;
+	// Add the node outputs you would like to fetch, e.g.:
+	TF_Operation* output_op = TF_GraphOperationByName(graph, "final_result");
+	//fprintf(stdout, "success 2");
+	outputs.push_back({output_op, 0});
+	//fprintf(stdout, "success 3");
+	std::vector<TF_Tensor*> output_values(outputs.size(), nullptr);
+
+	// Similar to creating the input tensor, however here we don't yet have the
+	  // output values, so we use TF_AllocateTensor()
+/*	  TF_Tensor* output_value = TF_AllocateTensor(TF_FLOAT, out_dims, 2, num_bytes_out);
+	  output_values.push_back(output_value);
+
+	  // As with inputs, check the values for the output operation and output tensor
+/*	  std::cout << "Output: " << TF_OperationName(output_op) << "\n";
+	  std::cout << "Output info: " << TF_Dim(output_value, 0) << "\n";
+*/
+/*
+	// Run `graph`
+	TF_SessionOptions* sess_opts = TF_NewSessionOptions();
+	TF_Session* session = TF_NewSession(graph, sess_opts, status);
+	//assert(TF_GetCode(status) == TF_OK);
+	if (TF_GetCode(status) != TF_OK) {
+		  fprintf(stderr, "ERROR: Unable to new session %s", TF_Message(status));        
+		  return 1;
+	  }
+	  
+/* 	tensorflow
+	  
 	// creating a Tensor for storing the data
 	tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,224,224,3}));
 	auto input_tensor_mapped = input_tensor.tensor<float, 4>();
 	 // First we load and initialize the model.
-	string root_dir = "/media/linaro/k1/labl";
+	string root_dir = "/home/linaro/label";
 	string graph ="output_graph.pb";
 	string labels_file_name ="output_labels.txt";
 	string input_layer = "input";
@@ -508,6 +734,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		LOG(ERROR) << read_labels_status;
 	return -1;
 	}
+*/
 	gettimeofday (&t1, &tz);
 	/* Continue until an error occurs or external signal requests an exit */
 	while(!ret && !signal_quit)
@@ -558,31 +785,47 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		}
 		if(opt->rgbinput){
 			gettimeofday (&t5, &tz);
-			conv_nv12_rgb((unsigned char *)disp->render_ctx.buffers[0], (unsigned char *)disp->render_ctx.buffers[1], &disp->render_ctx.rgbbuf[0]);
+			if(opt->splane){
+				conv_yuyv_rgb((unsigned char *)disp->render_ctx.buffers[0], opt->im_width, opt->im_height, &disp->render_ctx.rgbbuf[0], &disp->render_ctx.f_rgbbuf[0]);
+			}
+			else{
+				conv_nv12_rgb((unsigned char *)disp->render_ctx.buffers[0], (unsigned char *)disp->render_ctx.buffers[1], &disp->render_ctx.rgbbuf[0]);
+			}
 			gettimeofday (&t6, &tz);
 			deltatime2 = (float)(t6.tv_sec - t5.tv_sec + (t6.tv_usec - t5.tv_usec) * 1e-6);
-			
+/* 	tensorflow
 			int height = 224;
 			int width = 224;
 			int width2 = 320;
+			if(opt->splane)
+				width2=640;
 			int depth=3;
 			float mean = 128;
 			float std = 128;
-			
+			float mm;
 			const unsigned char * source_data = &disp->render_ctx.rgbbuf[0];
 			for (int y = 0; y < height; ++y) {
-				const unsigned char* source_row = source_data + (y * width2 * depth);
+				//const unsigned char* source_row = source_data + (y * width2 * depth);
 				for (int x = 0; x < width; ++x) {
-					const unsigned char* source_pixel = source_row + (x * depth);
+					//const unsigned char* source_pixel = source_row + (x * depth);
 						for (int c = 0; c < depth; ++c) {
-							const unsigned char* source_value = source_pixel + c;
-							input_tensor_mapped(0, y, x, c) = (((float) *source_value)-mean)/std;
+							//const unsigned char* source_value = source_pixel + c;
+							mm=  (float)*source_data;//value;
+							//input_tensor_mapped(0, y, x, c) = (float) *source_data;//value;
+							source_data++;
+							//input_tensor_mapped(0, y, x, c) = (((float) *source_value)-mean)/std;
 						}
 				}
 			}
 //			printf("pic=%u %u %u  , %f  %f  %f\n",disp->render_ctx.rgbbuf[0+320*3*5],disp->render_ctx.rgbbuf[1+320*3*5],disp->render_ctx.rgbbuf[2+320*3*5],input_tensor_mapped(0, 5, 0, 0),input_tensor_mapped(0, 5, 0, 1),input_tensor_mapped(0, 5, 0, 2));
+*/	
+/*		std::vector<TF_Tensor*> input_values2;
+			TF_Tensor* tensor2 = TF_NewTensor(TF_FLOAT, tensorDims, 4, &disp->render_ctx.f_rgbbuf[0],num_bytes , NULL, imNumPt);
+			input_values2.push_back(tensor2);
+*/			
 			gettimeofday (&t7, &tz);
 			deltatime3 = (float)(t7.tv_sec - t6.tv_sec + (t7.tv_usec - t6.tv_usec) * 1e-6);
+/*	tensorflow		
 			//const Tensor& resized_tensor = input_tensor[0];
 			// Actually run the image through the model.
 			std::vector<Tensor> outputs;
@@ -591,19 +834,66 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 				LOG(ERROR) << "Running model failed: " << run_status;
 				return -1;
 			}
+*/			
+			TF_SessionRun(session, nullptr, &inputs[0], &input_values[0], 1,//inputs.size(),
+				&outputs[0], &output_values[0], 1, nullptr, 0, nullptr, status);
+			for (int i = 0; i < 1; ++i){
+				//TF_DeleteTensor(input_values2[i]);
+				//TF_DeleteTensor(tensor2);
+			}
+			// Assign the values from the output tensor to a variable and iterate over them
+			  float* out_vals = static_cast<float*>(TF_TensorData(output_values[0]));
+			//  for (int i = 0; i < 5; ++i)
+			//  {
+		//std::cout << "rose:" << *out_vals++ << "\t"<< "dand:" << *out_vals++ << "\t"<< "daisy:" << *out_vals++ << "\t"<< "sunflow:" << *out_vals++ << "\t"<< "tulips:" << *out_vals++ << "\n";
+			//  }
+
+			//  fprintf(stdout, "\nSuccessfully run session\n");
+
+			//void* output_data = TF_TensorData(output_values[0]);
+			//assert(TF_GetCode(status) == TF_OK);
+			if (TF_GetCode(status) != TF_OK) {
+				  fprintf(stderr, "ERROR: Unable to run session %s", TF_Message(status));        
+				  return -1;
+			  } 
+			  
+			  
 			gettimeofday (&t8, &tz);
 			deltatime4 = (float)(t8.tv_sec - t7.tv_sec + (t8.tv_usec - t7.tv_usec) * 1e-6);
-			// Do something interesting with the results we've generated.
+/*	tensorflow			
+			  // Do something interesting with the results we've generated.
 			Status print_status =PrintTopLabels(outputs, labels, label_count, print_threshold * 0.01f);
 			if (!print_status.ok()) {
 				LOG(ERROR) << "Running print failed: " << print_status;
 				return -1;
 			}
+*/		float ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "rose:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "dand:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "daisy:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "sunflower:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "tulips:" <<ress<<"\t";
+		}
+			
 			gettimeofday (&t9, &tz);
 			deltatime5 = (float)(t9.tv_sec - t8.tv_sec + (t9.tv_usec - t8.tv_usec) * 1e-6);
-		}
-		printf("convert =%1.4f  load tensor=%1.4f  run model=%1.4f   secprint label=%1.4f sec\n", deltatime2, deltatime3, deltatime4, deltatime5);
-		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
+		//std::cout << "rose:" << *out_vals++ << "   dand:" << *out_vals++ << "   daisy:" << *out_vals++  << "   sunflow:" << *out_vals++ << "   tulips:" << *out_vals++;
+		printf("   convert =%1.3f  load tensor=%1.3f  run model=%1.3f sec\n",deltatime2, deltatime3, deltatime4);
+		  }
+			  //printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
 		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[1]);
 		/*
 		 * Render the planes to the display.
@@ -630,6 +920,13 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		/* Requeue the last buffer, the memory should be duplicated in the GPU and no longer needed. */
 		ret = ioctl(cap->v4l2_fd, VIDIOC_QBUF, &buf);
 	}
+/*	  TF_CloseSession( session, status );
+	  TF_DeleteSession( session, status );
+	  TF_DeleteSessionOptions( sess_opts );      
+	  TF_DeleteStatus(status);
+	  TF_DeleteImportGraphDefOptions(opts);
+	  TF_DeleteGraph(graph);                  
+*/	
 	return 0;
 }
 
@@ -657,7 +954,7 @@ int get_subdevice(const char* device)
  * @param device file system path to a v4l2 capture device.
  * @return file descriptor of the v4l2 capture device or error when negative.
  */
-int get_device(const char* device)
+int get_device(const char* device, struct options *opt)
 {
 	int fd;
 	struct v4l2_capability cap;
@@ -668,10 +965,14 @@ int get_device(const char* device)
 	}
 
 	ioctl(fd, VIDIOC_QUERYCAP, &cap);
-
-	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE)) {
-		LOGS_ERR("device does not have multiple plane capture capabilities");
-		fd = -1;
+	if(opt->splane){
+		//
+	}
+	else{
+		if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE)) {
+			LOGS_ERR("device does not have multiple plane capture capabilities");
+			fd = -1;
+		}
 	}
 	if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
 		LOGS_ERR("device does not have streaming capabilities");
@@ -689,9 +990,9 @@ int get_device(const char* device)
  * @param cap Capture data management structure with V4L2 buffer mapping.
  * @return rror status of the shutdown. Value 0 is returned on success.
  */
-int capture_shutdown(struct capture_context *cap)
+int capture_shutdown(struct capture_context *cap, struct options *opt)
 {
-	stop_stream(cap->v4l2_fd);
+	stop_stream(cap->v4l2_fd, opt);
 	return unmap_buffers(cap);
 }
 
@@ -713,15 +1014,21 @@ int capture_setup(struct capture_context *cap, struct options *opt)
 	 * NV12 is used by the render routine which has two planes.
 	 * First plane is luma, second plane is chroma at 1/4 resolution.
 	 */
-	if(opt->ddump)
-	{
-		cap->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-		cap->num_planes = 1;
+	if(opt->splane){
+		if(opt->ddump)	{
+			cap->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+			cap->num_planes = 1;
+		}
 	}
-	else
-	{
-		cap->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-		cap->num_planes = 1;
+	else{
+		if(opt->ddump)	{
+			cap->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+			cap->num_planes = 1;
+		}
+		else {
+			cap->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+			cap->num_planes = 1;
+		}
 	}
 	cap->memory = V4L2_MEMORY_MMAP;
 	
@@ -737,18 +1044,32 @@ int capture_setup(struct capture_context *cap, struct options *opt)
 		LOGS_ERR("Unable to get format %d", ret);
 		exit(-errno);
 	}
-	
-	if(opt->ddump)
-	{
-		fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_UYVY;
+	if(opt->splane){
+		if(opt->ddump)
+		{
+			fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+			
+		}
+		else{
+			//fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
+		}
+		fmt.fmt.pix.width = opt->im_width;//1920;
+		fmt.fmt.pix.height= opt->im_height;//1080;
+		LOGS_DBG("cap->v4l2_fd= %d", cap->v4l2_fd);
 	}
 	else{
-		fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
+		if(opt->ddump)
+		{
+			fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_UYVY;
+		}
+		else{
+			fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
+		}
+		fmt.fmt.pix_mp.num_planes = cap->num_planes;
+		fmt.fmt.pix_mp.width = opt->im_width;//1920;
+		fmt.fmt.pix_mp.height= opt->im_height;//1080;
+		LOGS_DBG("cap->v4l2_fd= %d", cap->v4l2_fd);
 	}
-	fmt.fmt.pix_mp.num_planes = cap->num_planes;
-	fmt.fmt.pix_mp.width = opt->im_width;//1920;
-	fmt.fmt.pix_mp.height= opt->im_height;//1080;
-	LOGS_DBG("cap->v4l2_fd= %d", cap->v4l2_fd);
 	ret = ioctl(cap->v4l2_fd, VIDIOC_S_FMT, &fmt);
 	if (ret < 0)
 	{
@@ -785,7 +1106,7 @@ int capture_setup(struct capture_context *cap, struct options *opt)
 			cap->buffers[i].dma_buf_fd[p] = -1;
 
 	/* Memory map the buffers into user space */
-	ret = map_buffers(cap, opt->dma_export);
+	ret = map_buffers(cap, opt->dma_export, opt);
 	if (ret) goto cleanup;
 
 	/* initialize capture by queueing aloctaed buffers before streaming is enabled */
@@ -793,11 +1114,11 @@ int capture_setup(struct capture_context *cap, struct options *opt)
 	if (ret) goto cleanup;
 
 	/* Start the video stream, this will setup initial settings on the subdevice. */
-	ret = start_stream(cap->v4l2_fd);
+	ret = start_stream(cap->v4l2_fd, opt);
 
 	return ret;
 cleanup:
-	capture_shutdown(cap);
+	capture_shutdown(cap, opt);
 	return ret;
 }
 
@@ -1046,7 +1367,9 @@ void do_key_event(char keys[], int num_keys, struct display_context* disp)
  * @param opt User selected progam configuration options.
  * @return error status of the setup. Value 0 is returned on success.
  */
-int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
+int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt,
+	TF_Session* session, const TF_Output* inputs, TF_Tensor* const* input_values, 
+	int ninputs,const TF_Output* outputs, TF_Tensor** output_values, int noutputs)
 {
 		struct capture_context* cap = (capture_context*)cap_ctx;
 		struct display_context* disp = (display_context*)disp_ctx;
@@ -1058,7 +1381,7 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 		cap->app.test_state = 0;
 
 		/* open the video device for capture. */
-		cap->v4l2_fd = get_device(opt->dev_name);
+		cap->v4l2_fd = get_device(opt->dev_name, opt);
 		if (cap->v4l2_fd < 0) {
 			exit(1);
 		}
@@ -1073,7 +1396,7 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 		if (ret)
 		{
 			LOGS_ERR("Unable to start capture stream");
-			capture_shutdown(cap);
+			capture_shutdown(cap,opt);
 			return ret;
 		}
 
@@ -1090,9 +1413,11 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt)
 		disp->callbacks.key_event = do_key_event;
 		disp->callbacks.private_context = cap;
 		/* Enter the capture display loop */
-		ret = capture_display_yuv(cap, disp, opt);
+		ret = capture_display_yuv(cap, disp, opt,
+		session, &inputs[0], &input_values[0], 1,//inputs.size(),
+		&outputs[0], &output_values[0], 1/*outputs.size()*/);
 		/* Cleanly release the buffers map and free them in the kernel on either error or exit request. */
-		capture_shutdown(cap);
+		capture_shutdown(cap, opt);
 
 		return ret;
 }

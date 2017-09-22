@@ -29,7 +29,7 @@
 #define OPTION_H__
 
 #include <sys/queue.h>
-
+#include "tensorflow/c/c_api.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,7 +51,9 @@ struct options;
 /**
  * Function pointer for any test program entry points
  */
-typedef int (*usage_function)(void *capture, void* display, struct options*);
+typedef int (*usage_function)(void *capture, void* display, struct options*,
+           TF_Session* , const TF_Output* , TF_Tensor* const* , 
+           int ,const TF_Output* , TF_Tensor** , int );
 
 /**
  * Description of a test option to run from the command line.
@@ -71,6 +73,7 @@ struct usage {
  * Data structure for all user command line options.
  */
 struct options {
+ int splane;
  int im_width;
  int im_height;
  int win_width;
@@ -83,6 +86,7 @@ struct options {
 	int capture_count;
 	/** Number of buffers to allocate from the v4l2 device. */
 	int buffer_count;
+ int num_buf;
 	/** Export DMA file descriptor for each v4l2 plane. */
 	int dma_export;
 	/** V4L2 capture device path. */

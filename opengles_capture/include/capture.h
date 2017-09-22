@@ -29,7 +29,7 @@
 
 #include <linux/videodev2.h>
 #include <linux/v4l2-controls.h>
-
+#include "tensorflow/c/c_api.h"
 /**
  * Hold refernces to the memory mapped buffers from V4L2.
  * Each instance of this structure represents one V4L2 buffer and all its planes.
@@ -107,7 +107,9 @@ struct capture_context {
  * @param opt User selected progam configuration options.
  * @return error status of the setup. Value 0 is returned on success.
  */
-int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt);
+int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt,
+       TF_Session* session, const TF_Output* inputs, TF_Tensor* const* input_values, 
+      int ninputs,const TF_Output* outputs, TF_Tensor** output_values, int noutputs);
 
 /**
  * Setup V4L2 capture device for streaming and allocate buffers.

@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -57,6 +57,8 @@ linux/videodev2.h
 -
 linux/v4l2-controls.h
 -
+tensorflow/c/c_api.h
+../include/tensorflow/c/c_api.h
 
 ../include/display.h
 options.h
@@ -91,6 +93,8 @@ sys/time.h
 ../include/options.h
 sys/queue.h
 -
+tensorflow/c/c_api.h
+../include/tensorflow/c/c_api.h
 
 ../include/util.h
 string.h
@@ -116,7 +120,7 @@ X11/Xutil.h
 X11/keysym.h
 -
 
-/media/linaro/k1/tf410c/opengles_capture/capture.cpp
+/home/linaro/tf410c/opengles_capture/capture.cpp
 stdint.h
 -
 stdio.h
@@ -152,49 +156,57 @@ linux/videodev2.h
 linux/v4l2-controls.h
 -
 options.h
-/media/linaro/k1/tf410c/opengles_capture/options.h
+/home/linaro/tf410c/opengles_capture/options.h
 capture.h
-/media/linaro/k1/tf410c/opengles_capture/capture.h
+/home/linaro/tf410c/opengles_capture/capture.h
 display.h
-/media/linaro/k1/tf410c/opengles_capture/display.h
+/home/linaro/tf410c/opengles_capture/display.h
 log.h
-/media/linaro/k1/tf410c/opengles_capture/log.h
-fstream
--
+/home/linaro/tf410c/opengles_capture/log.h
 vector
 -
 tensorflow/core/framework/graph.pb.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/framework/graph.pb.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/framework/graph.pb.h
 tensorflow/core/framework/tensor.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/framework/tensor.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/framework/tensor.h
 tensorflow/core/graph/default_device.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/graph/default_device.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/graph/default_device.h
 tensorflow/core/graph/graph_def_builder.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/graph/graph_def_builder.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/graph/graph_def_builder.h
 tensorflow/core/lib/core/errors.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/lib/core/errors.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/lib/core/errors.h
 tensorflow/core/lib/core/stringpiece.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/lib/core/stringpiece.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/lib/core/stringpiece.h
 tensorflow/core/lib/core/threadpool.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/lib/core/threadpool.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/lib/core/threadpool.h
 tensorflow/core/lib/io/path.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/lib/io/path.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/lib/io/path.h
 tensorflow/core/lib/strings/stringprintf.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/lib/strings/stringprintf.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/lib/strings/stringprintf.h
 tensorflow/core/platform/init_main.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/platform/init_main.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/platform/init_main.h
 tensorflow/core/platform/logging.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/platform/logging.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/platform/logging.h
 tensorflow/core/platform/types.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/platform/types.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/platform/types.h
 tensorflow/core/public/session.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/public/session.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/public/session.h
 tensorflow/core/util/command_line_flags.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/util/command_line_flags.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/util/command_line_flags.h
 tensorflow/core/platform/env.h
-/media/linaro/k1/tf410c/opengles_capture/tensorflow/core/platform/env.h
+/home/linaro/tf410c/opengles_capture/tensorflow/core/platform/env.h
+assert.h
+-
+iostream
+-
+vector
+-
+tensorflow/c/c_api.h
+/home/linaro/tf410c/opengles_capture/tensorflow/c/c_api.h
+fstream
+-
 
-/media/linaro/k1/tf410c/opengles_capture/display.cpp
+/home/linaro/tf410c/opengles_capture/display.cpp
 stdlib.h
 -
 stdio.h
@@ -222,15 +234,15 @@ EGL/eglext.h
 libdrm/drm_fourcc.h
 -
 util.h
-/media/linaro/k1/tf410c/opengles_capture/util.h
+/home/linaro/tf410c/opengles_capture/util.h
 display.h
-/media/linaro/k1/tf410c/opengles_capture/display.h
+/home/linaro/tf410c/opengles_capture/display.h
 gles_egl_util.h
-/media/linaro/k1/tf410c/opengles_capture/gles_egl_util.h
+/home/linaro/tf410c/opengles_capture/gles_egl_util.h
 log.h
-/media/linaro/k1/tf410c/opengles_capture/log.h
+/home/linaro/tf410c/opengles_capture/log.h
 
-/media/linaro/k1/tf410c/opengles_capture/gles_egl_util.cpp
+/home/linaro/tf410c/opengles_capture/gles_egl_util.cpp
 stdlib.h
 -
 string.h
@@ -238,11 +250,11 @@ string.h
 assert.h
 -
 gles_egl_util.h
-/media/linaro/k1/tf410c/opengles_capture/gles_egl_util.h
+/home/linaro/tf410c/opengles_capture/gles_egl_util.h
 log.h
-/media/linaro/k1/tf410c/opengles_capture/log.h
+/home/linaro/tf410c/opengles_capture/log.h
 
-/media/linaro/k1/tf410c/opengles_capture/main.cpp
+/home/linaro/tf410c/opengles_capture/main.cpp
 stdint.h
 -
 stdio.h
@@ -266,13 +278,27 @@ sys/types.h
 sys/queue.h
 -
 options.h
-/media/linaro/k1/tf410c/opengles_capture/options.h
+/home/linaro/tf410c/opengles_capture/options.h
 capture.h
-/media/linaro/k1/tf410c/opengles_capture/capture.h
+/home/linaro/tf410c/opengles_capture/capture.h
 display.h
-/media/linaro/k1/tf410c/opengles_capture/display.h
+/home/linaro/tf410c/opengles_capture/display.h
 log.h
-/media/linaro/k1/tf410c/opengles_capture/log.h
+/home/linaro/tf410c/opengles_capture/log.h
+assert.h
+-
+iostream
+-
+vector
+-
+tensorflow/c/c_api.h
+/home/linaro/tf410c/opengles_capture/tensorflow/c/c_api.h
+stdio.h
+-
+stdlib.h
+-
+tensorflow/c/c_api.h
+-
 
 /usr/local/include/eigen3/Eigen/Core
 src/Core/util/DisableStupidWarnings.h
@@ -2250,6 +2276,12 @@ google/protobuf/wire_format_lite.h
 google/protobuf/io/coded_stream.h
 -
 google/protobuf/arenastring.h
+-
+
+/usr/local/include/google/tensorflow/tensorflow/c/c_api.h
+stddef.h
+-
+stdint.h
 -
 
 /usr/local/include/google/tensorflow/tensorflow/core/framework/allocation_description.pb.h
