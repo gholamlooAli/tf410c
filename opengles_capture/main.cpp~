@@ -56,8 +56,19 @@ struct options g_program_options = {0};
 #include <vector>
 #include "tensorflow/c/c_api.h"
 
-
-
+struct  tf_session{
+	TF_Session* session;
+	//const TF_Output* inputs;
+	//TF_Tensor* const* input_values;
+	int ninputs;
+	//const TF_Output* outputs;
+	//TF_Tensor** output_values;
+	int noutputs;
+	std::vector<TF_Output> inputs;
+	std::vector<TF_Tensor*> input_values;
+	std::vector<TF_Output> outputs;
+	std::vector<TF_Tensor*> output_values;
+};
 TF_Buffer* read_file(const char* file); 
 void free_buffer(void* data, size_t length) {                                             
         free(data);  
@@ -78,7 +89,81 @@ TF_Buffer* read_file(const char* file) {
   buf->data_deallocator = free_buffer;                                                    
   return buf;
 } 
-//ali */	
+//ali */
+int loadGraph(struct tf_session* tf, struct display_context *disp)
+{
+	//---------------------------------------------------------------------------------------
+  // Graph definition from unzipped https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
+  // which is used in the Go, Java and Android examples                                   
+  TF_Buffer* graph_def = read_file("/home/linaro/label/output_graph.pb");                      
+  TF_Graph* graph = TF_NewGraph();
+// Import graph_def into graph                                                          
+  TF_Status* status = TF_NewStatus();                                                     
+  TF_ImportGraphDefOptions* opts = TF_NewImportGraphDefOptions();                         
+  TF_GraphImportGraphDef(graph, graph_def, opts, status);
+  TF_DeleteImportGraphDefOptions(opts);
+  if (TF_GetCode(status) != TF_OK) {
+          fprintf(stderr, "ERROR: Unable to import graph %s", TF_Message(status));        
+          return 1;
+  }       
+  fprintf(stdout, "Successfully imported graph");
+/*
+// Setup graph inputs
+std::vector<TF_Output> inputs;
+std::vector<TF_Tensor*> input_values;
+*/
+// Add the placeholders you would like to feed, e.g.:
+TF_Operation* placeholder = TF_GraphOperationByName(graph, "input");
+tf->inputs.push_back({placeholder, 0});
+
+// Create a new tensor pointing to that memory:
+int 	inputwidth=224;
+int	inputheight=224;
+int 	*imNumPt = new int(1);
+const 	int64_t tensorDims[4] = {1,inputheight,inputwidth,3};
+const 	int 	num_bytes=inputheight * inputwidth * 3* sizeof(float);
+const int num_bytes_out = 5 * sizeof(float);
+
+int64_t out_dims[] = {1, 5};
+//float mmf[224*224*3];
+
+TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, &disp->render_ctx.f_rgbbuf[0],num_bytes , NULL, imNumPt);
+tf->input_values.push_back(tensor);
+// Optionally, you can check that your input_op and input tensors are correct
+  // by using some of the functions provided by the C API.
+  std::cout << "Input op info: " << TF_OperationNumOutputs(placeholder) << "\n";
+  std::cout << "Input data info: " << TF_Dim(tensor, 0) << "\n";
+fprintf(stdout, "success 1"); 
+
+// Setup graph outputs
+//std::vector<TF_Output> outputs;
+// Add the node outputs you would like to fetch, e.g.:
+TF_Operation* output_op = TF_GraphOperationByName(graph, "final_result");
+//fprintf(stdout, "success 2");
+tf->outputs.push_back({output_op, 0});
+//fprintf(stdout, "success 3");
+tf->output_values.resize(tf->outputs.size(), nullptr);
+
+// Similar to creating the input tensor, however here we don't yet have the
+  // output values, so we use TF_AllocateTensor()
+  TF_Tensor* output_value = TF_AllocateTensor(TF_FLOAT, out_dims, 2, num_bytes_out);
+  tf->output_values.push_back(output_value);
+
+  // As with inputs, check the values for the output operation and output tensor
+  std::cout << "Output: " << TF_OperationName(output_op) << "\n";
+  std::cout << "Output info: " << TF_Dim(output_value, 0) << "\n";
+
+
+// Run `graph`
+TF_SessionOptions* sess_opts = TF_NewSessionOptions();
+tf->session = TF_NewSession(graph, sess_opts, status);
+//assert(TF_GetCode(status) == TF_OK);
+if (TF_GetCode(status) != TF_OK) {
+          fprintf(stderr, "ERROR: Unable to new session %s", TF_Message(status));        
+          return 1;
+  }
+}
+
 /* Setup the catpure display function as a progam usage. */
 static struct usage capture_display = {
 		.name="CAPTURE_DISPLAY",
@@ -302,6 +387,8 @@ int main(int argc, char * const argv[])
 	struct capture_context *cap = &cap_context;
 	struct display_context disp_context;
 	struct display_context *disp = &disp_context;
+	struct tf_session	tfsess;
+	struct tf_session	*tfses=&tfsess;	
 	int ret = 0;
 	
 	
@@ -348,9 +435,10 @@ int main(int argc, char * const argv[])
 	
 	
 //---------------------------------------------------------------------------------------
-  // Graph definition from unzipped https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
+  loadGraph(tfses, disp);
+	// Graph definition from unzipped https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
   // which is used in the Go, Java and Android examples                                   
-  TF_Buffer* graph_def = read_file("/home/linaro/label/output_graph.pb");                      
+ /* TF_Buffer* graph_def = read_file("/home/linaro/label/output_graph.pb");                      
   TF_Graph* graph = TF_NewGraph();
 // Import graph_def into graph                                                          
   TF_Status* status = TF_NewStatus();                                                     
@@ -379,9 +467,9 @@ const 	int 	num_bytes=inputheight * inputwidth * 3* sizeof(float);
 const int num_bytes_out = 5 * sizeof(float);
 
 int64_t out_dims[] = {1, 5};
-float mmf[224*224*3];
+//float mmf[224*224*3];
 
-TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, mmf/*&disp->render_ctx.f_rgbbuf[0]*/,num_bytes , NULL, imNumPt);
+TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, &disp->render_ctx.f_rgbbuf[0],num_bytes , NULL, imNumPt);
 input_values.push_back(tensor);
 // Optionally, you can check that your input_op and input tensors are correct
   // by using some of the functions provided by the C API.
@@ -596,16 +684,16 @@ TF_DeleteSessionOptions(sess_opts);
 TF_DeleteImportGraphDefOptions(import_opts);
 TF_DeleteGraph(graph);
 TF_DeleteStatus(s);
-*/
+*/TF_Status* status = TF_NewStatus();  
 	ret = g_program_options.program_use->function(cap, disp, &g_program_options,
-		session, &inputs[0], &input_values[0], inputs.size(),
-		&outputs[0], &output_values[0], outputs.size());
-TF_CloseSession( session, status );
-  TF_DeleteSession( session, status );
-  TF_DeleteSessionOptions( sess_opts );      
+		tfses->session, &tfses->inputs[0], &tfses->input_values[0], tfses->inputs.size(),
+		&tfses->outputs[0], &tfses->output_values[0], tfses->outputs.size());
+TF_CloseSession( tfses->session, status );
+  TF_DeleteSession( tfses->session, status );
+  //TF_DeleteSessionOptions( sess_opts );      
   TF_DeleteStatus(status);
-  TF_DeleteImportGraphDefOptions(opts);
-  TF_DeleteGraph(graph);        
+  //TF_DeleteImportGraphDefOptions(opts);
+  //TF_DeleteGraph(graph);        
 	return ret;
 }
 
