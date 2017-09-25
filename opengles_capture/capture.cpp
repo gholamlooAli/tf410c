@@ -786,7 +786,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		if(opt->rgbinput){
 			gettimeofday (&t5, &tz);
 			if(opt->splane){
-				conv_yuyv_rgb((unsigned char *)disp->render_ctx.buffers[0], opt->im_width, opt->im_height, &disp->render_ctx.rgbbuf[0], &disp->render_ctx.f_rgbbuf[0]);
+				conv_yuyv_rgb((unsigned char *)disp->render_ctx.buffers[0], opt->im_width, opt->im_height, &disp->render_ctx.rgbbuf[0], opt->pfdata);
 			}
 			else{
 				conv_nv12_rgb((unsigned char *)disp->render_ctx.buffers[0], (unsigned char *)disp->render_ctx.buffers[1], &disp->render_ctx.rgbbuf[0]);
@@ -920,13 +920,13 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		/* Requeue the last buffer, the memory should be duplicated in the GPU and no longer needed. */
 		ret = ioctl(cap->v4l2_fd, VIDIOC_QBUF, &buf);
 	}
-/*	  TF_CloseSession( session, status );
+	  TF_CloseSession( session, status );
 	  TF_DeleteSession( session, status );
-	  TF_DeleteSessionOptions( sess_opts );      
-	  TF_DeleteStatus(status);
-	  TF_DeleteImportGraphDefOptions(opts);
-	  TF_DeleteGraph(graph);                  
-*/	
+	  //TF_DeleteSessionOptions( sess_opts );      
+	  //TF_DeleteStatus(status);
+	  //TF_DeleteImportGraphDefOptions(opts);
+	  //TF_DeleteGraph(graph);                  
+	
 	return 0;
 }
 

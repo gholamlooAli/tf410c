@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/linaro/tf410c/opengles_capture/display.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/display.cpp.o"
   "/home/linaro/tf410c/opengles_capture/gles_egl_util.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/gles_egl_util.cpp.o"
   "/home/linaro/tf410c/opengles_capture/main.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/main.cpp.o"
+  "/home/linaro/tf410c/opengles_capture/tfdragon.cpp" "/home/linaro/tf410c/opengles_capture/build/CMakeFiles/capture.dir/tfdragon.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

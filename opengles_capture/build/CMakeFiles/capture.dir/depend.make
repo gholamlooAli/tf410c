@@ -468,6 +468,20 @@ CMakeFiles/capture.dir/main.cpp.o: ../include/capture.h
 CMakeFiles/capture.dir/main.cpp.o: ../include/display.h
 CMakeFiles/capture.dir/main.cpp.o: ../include/log.h
 CMakeFiles/capture.dir/main.cpp.o: ../include/options.h
+CMakeFiles/capture.dir/main.cpp.o: ../include/tfdragon.h
 CMakeFiles/capture.dir/main.cpp.o: ../main.cpp
 CMakeFiles/capture.dir/main.cpp.o: /usr/local/include/google/tensorflow/tensorflow/c/c_api.h
+
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/EGL/egl.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/EGL/eglext.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/EGL/eglplatform.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/GLES3/gl3.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/GLES3/gl3platform.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/KHR/khrplatform.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/capture.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/display.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/options.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../include/tfdragon.h
+CMakeFiles/capture.dir/tfdragon.cpp.o: ../tfdragon.cpp
+CMakeFiles/capture.dir/tfdragon.cpp.o: /usr/local/include/google/tensorflow/tensorflow/c/c_api.h
 

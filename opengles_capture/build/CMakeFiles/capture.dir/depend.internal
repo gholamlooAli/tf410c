@@ -469,5 +469,19 @@ CMakeFiles/capture.dir/main.cpp.o
  ../include/display.h
  ../include/log.h
  ../include/options.h
+ ../include/tfdragon.h
  /home/linaro/tf410c/opengles_capture/main.cpp
+ /usr/local/include/google/tensorflow/tensorflow/c/c_api.h
+CMakeFiles/capture.dir/tfdragon.cpp.o
+ ../include/EGL/egl.h
+ ../include/EGL/eglext.h
+ ../include/EGL/eglplatform.h
+ ../include/GLES3/gl3.h
+ ../include/GLES3/gl3platform.h
+ ../include/KHR/khrplatform.h
+ ../include/capture.h
+ ../include/display.h
+ ../include/options.h
+ ../include/tfdragon.h
+ /home/linaro/tf410c/opengles_capture/tfdragon.cpp
  /usr/local/include/google/tensorflow/tensorflow/c/c_api.h

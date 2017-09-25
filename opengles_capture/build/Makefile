@@ -231,6 +231,33 @@ main.cpp.s:
 	$(MAKE) -f CMakeFiles/capture.dir/build.make CMakeFiles/capture.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+tfdragon.o: tfdragon.cpp.o
+
+.PHONY : tfdragon.o
+
+# target to build an object file
+tfdragon.cpp.o:
+	$(MAKE) -f CMakeFiles/capture.dir/build.make CMakeFiles/capture.dir/tfdragon.cpp.o
+.PHONY : tfdragon.cpp.o
+
+tfdragon.i: tfdragon.cpp.i
+
+.PHONY : tfdragon.i
+
+# target to preprocess a source file
+tfdragon.cpp.i:
+	$(MAKE) -f CMakeFiles/capture.dir/build.make CMakeFiles/capture.dir/tfdragon.cpp.i
+.PHONY : tfdragon.cpp.i
+
+tfdragon.s: tfdragon.cpp.s
+
+.PHONY : tfdragon.s
+
+# target to generate assembly for a file
+tfdragon.cpp.s:
+	$(MAKE) -f CMakeFiles/capture.dir/build.make CMakeFiles/capture.dir/tfdragon.cpp.s
+.PHONY : tfdragon.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -252,6 +279,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... tfdragon.o"
+	@echo "... tfdragon.i"
+	@echo "... tfdragon.s"
 .PHONY : help
 
 

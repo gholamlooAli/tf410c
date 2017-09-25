@@ -15,7 +15,7 @@ find_package(Eigen REQUIRED)
 find_package(Protobuf REQUIRED)
 
 set(PROJECT_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include ${TensorFlow_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS} ${PROTOBUF_INCLUDE_DIRS})
-set(PROJECT_LIBRARIES ${TensorFlow_LIBRARIES} ${PROTOBUF_LIBRARIES} libjpeg.so libGLESv2.so.2 libEGL.so.1 X11 Xext)
+set(PROJECT_LIBRARIES ${TensorFlow_LIBRARIES} ${PROTOBUF_LIBRARIES} libGLESv2.so.2 libEGL.so.1 X11 Xext)
 
 include_directories(${PROJECT_INCLUDE_DIRS})
 add_executable(${EXECUTABLE} ${SOURCE_FILES})

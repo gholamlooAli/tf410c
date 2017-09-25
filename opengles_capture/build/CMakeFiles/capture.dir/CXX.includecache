@@ -96,6 +96,18 @@ sys/queue.h
 tensorflow/c/c_api.h
 ../include/tensorflow/c/c_api.h
 
+../include/tfdragon.h
+assert.h
+-
+iostream
+-
+vector
+-
+tensorflow/c/c_api.h
+../include/tensorflow/c/c_api.h
+display.h
+../include/display.h
+
 ../include/util.h
 string.h
 -
@@ -285,6 +297,16 @@ display.h
 /home/linaro/tf410c/opengles_capture/display.h
 log.h
 /home/linaro/tf410c/opengles_capture/log.h
+tfdragon.h
+/home/linaro/tf410c/opengles_capture/tfdragon.h
+stdio.h
+-
+stdlib.h
+-
+tensorflow/c/c_api.h
+-
+
+/home/linaro/tf410c/opengles_capture/tfdragon.cpp
 assert.h
 -
 iostream
@@ -293,12 +315,8 @@ vector
 -
 tensorflow/c/c_api.h
 /home/linaro/tf410c/opengles_capture/tensorflow/c/c_api.h
-stdio.h
--
-stdlib.h
--
-tensorflow/c/c_api.h
--
+tfdragon.h
+/home/linaro/tf410c/opengles_capture/tfdragon.h
 
 /usr/local/include/eigen3/Eigen/Core
 src/Core/util/DisableStupidWarnings.h

@@ -786,7 +786,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		if(opt->rgbinput){
 			gettimeofday (&t5, &tz);
 			if(opt->splane){
-				conv_yuyv_rgb((unsigned char *)disp->render_ctx.buffers[0], opt->im_width, opt->im_height, &disp->render_ctx.rgbbuf[0], &disp->render_ctx.f_rgbbuf[0]);
+				conv_yuyv_rgb((unsigned char *)disp->render_ctx.buffers[0], opt->im_width, opt->im_height, &disp->render_ctx.rgbbuf[0], opt->pfdata);
 			}
 			else{
 				conv_nv12_rgb((unsigned char *)disp->render_ctx.buffers[0], (unsigned char *)disp->render_ctx.buffers[1], &disp->render_ctx.rgbbuf[0]);
@@ -867,10 +867,30 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 				LOG(ERROR) << "Running print failed: " << print_status;
 				return -1;
 			}
-*/			  
+*/		float ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "rose:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "dand:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "daisy:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "sunflower:" <<ress;
+		}
+		ress=*out_vals++;
+		if(ress>0.59){
+			std::cout << "tulips:" <<ress<<"\t";
+		}
+			
 			gettimeofday (&t9, &tz);
 			deltatime5 = (float)(t9.tv_sec - t8.tv_sec + (t9.tv_usec - t8.tv_usec) * 1e-6);
-		std::cout << "rose:" << *out_vals++ << "   dand:" << *out_vals++ << "   daisy:" << *out_vals++  << "   sunflow:" << *out_vals++ << "   tulips:" << *out_vals++;
+		//std::cout << "rose:" << *out_vals++ << "   dand:" << *out_vals++ << "   daisy:" << *out_vals++  << "   sunflow:" << *out_vals++ << "   tulips:" << *out_vals++;
 		printf("   convert =%1.3f  load tensor=%1.3f  run model=%1.3f sec\n",deltatime2, deltatime3, deltatime4);
 		  }
 			  //printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
@@ -900,13 +920,13 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		/* Requeue the last buffer, the memory should be duplicated in the GPU and no longer needed. */
 		ret = ioctl(cap->v4l2_fd, VIDIOC_QBUF, &buf);
 	}
-/*	  TF_CloseSession( session, status );
+	  TF_CloseSession( session, status );
 	  TF_DeleteSession( session, status );
 	  TF_DeleteSessionOptions( sess_opts );      
 	  TF_DeleteStatus(status);
 	  TF_DeleteImportGraphDefOptions(opts);
 	  TF_DeleteGraph(graph);                  
-*/	
+	
 	return 0;
 }
 

@@ -74,7 +74,7 @@ struct render_context
 	void *buffers[MAX_RENDER_BUFFERS];
  //unsigned char rgbbuf[320*240*3];
  unsigned char rgbbuf[640*480*3];
- float         f_rgbbuf[224*224*3];
+ //float         f_rgbbuf[224*224*3];
 };
 
 /**

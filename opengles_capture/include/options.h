@@ -73,6 +73,7 @@ struct usage {
  * Data structure for all user command line options.
  */
 struct options {
+ float * pfdata;
  int splane;
  int im_width;
  int im_height;
