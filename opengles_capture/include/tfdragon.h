@@ -4,8 +4,8 @@
 #include <iostream>
 #include <vector>
 #include "tensorflow/c/c_api.h"
-#include "display.h"
-class  Dragon_TFSession;
+//#include "display.h"
+//class  Dragon_TFSession;
         
 class  Dragon_TFSession
 {
@@ -27,6 +27,7 @@ class  Dragon_TFSession
 	Dragon_TFSession()      {}
 	~Dragon_TFSession()     {}
 	int LoadGraph(float *pfdata);
+	int RunSession(void);
 };
 TF_Buffer* read_file(const char* file); 
 	

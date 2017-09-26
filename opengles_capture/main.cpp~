@@ -42,10 +42,14 @@
 #include <sys/queue.h>
 
 #include "options.h"
+
+//#ifdef class Dragon_TFSession
+//#undef class Dragon_TFSession
+// #endif
 #include "capture.h"
 #include "display.h"
 #include "log.h"
-#include "tfdragon.h"
+//#include "tfdragon.h"
 int VERBOSE = LOG_INFO;
 
 struct options g_program_options = {0};
@@ -276,6 +280,7 @@ int main(int argc, char * const argv[])
 	//struct tf_session	tfsess;
 	//struct tf_session	*tfses=&tfsess;	
 	Dragon_TFSession DrTfSession;
+	Dragon_TFSession* drtfsession=&DrTfSession;
 	int ret = 0;
 	
 	
@@ -325,264 +330,15 @@ int main(int argc, char * const argv[])
 	float *pdata = new float[224*224*3];
 	opt->pfdata=pdata;
 	DrTfSession.LoadGraph(pdata);
-	// Graph definition from unzipped https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
-  // which is used in the Go, Java and Android examples                                   
- /* TF_Buffer* graph_def = read_file("/home/linaro/label/output_graph.pb");                      
-  TF_Graph* graph = TF_NewGraph();
-// Import graph_def into graph                                                          
-  TF_Status* status = TF_NewStatus();                                                     
-  TF_ImportGraphDefOptions* opts = TF_NewImportGraphDefOptions();                         
-  TF_GraphImportGraphDef(graph, graph_def, opts, status);
-  TF_DeleteImportGraphDefOptions(opts);
-  if (TF_GetCode(status) != TF_OK) {
-          fprintf(stderr, "ERROR: Unable to import graph %s", TF_Message(status));        
-          return 1;
-  }       
-  fprintf(stdout, "Successfully imported graph");
-// Setup graph inputs
-std::vector<TF_Output> inputs;
-std::vector<TF_Tensor*> input_values;
-
-// Add the placeholders you would like to feed, e.g.:
-TF_Operation* placeholder = TF_GraphOperationByName(graph, "input");
-inputs.push_back({placeholder, 0});
-
-// Create a new tensor pointing to that memory:
-int 	inputwidth=224;
-int	inputheight=224;
-int 	*imNumPt = new int(1);
-const 	int64_t tensorDims[4] = {1,inputheight,inputwidth,3};
-const 	int 	num_bytes=inputheight * inputwidth * 3* sizeof(float);
-const int num_bytes_out = 5 * sizeof(float);
-
-int64_t out_dims[] = {1, 5};
-//float mmf[224*224*3];
-
-TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, &disp->render_ctx.f_rgbbuf[0],num_bytes , NULL, imNumPt);
-input_values.push_back(tensor);
-// Optionally, you can check that your input_op and input tensors are correct
-  // by using some of the functions provided by the C API.
-  std::cout << "Input op info: " << TF_OperationNumOutputs(placeholder) << "\n";
-  std::cout << "Input data info: " << TF_Dim(tensor, 0) << "\n";
-fprintf(stdout, "success 1"); 
-
-// Setup graph outputs
-std::vector<TF_Output> outputs;
-// Add the node outputs you would like to fetch, e.g.:
-TF_Operation* output_op = TF_GraphOperationByName(graph, "final_result");
-//fprintf(stdout, "success 2");
-outputs.push_back({output_op, 0});
-//fprintf(stdout, "success 3");
-std::vector<TF_Tensor*> output_values(outputs.size(), nullptr);
-
-// Similar to creating the input tensor, however here we don't yet have the
-  // output values, so we use TF_AllocateTensor()
-  TF_Tensor* output_value = TF_AllocateTensor(TF_FLOAT, out_dims, 2, num_bytes_out);
-  output_values.push_back(output_value);
-
-  // As with inputs, check the values for the output operation and output tensor
-  std::cout << "Output: " << TF_OperationName(output_op) << "\n";
-  std::cout << "Output info: " << TF_Dim(output_value, 0) << "\n";
-
-
-// Run `graph`
-TF_SessionOptions* sess_opts = TF_NewSessionOptions();
-TF_Session* session = TF_NewSession(graph, sess_opts, status);
-//assert(TF_GetCode(status) == TF_OK);
-if (TF_GetCode(status) != TF_OK) {
-          fprintf(stderr, "ERROR: Unable to new session %s", TF_Message(status));        
-          return 1;
-  }
-  /*
-TF_SessionRun(session, nullptr, &inputs[0], &input_values[0], inputs.size(),
-              &outputs[0], &output_values[0], outputs.size(), nullptr, 0, nullptr, status);
-  // Assign the values from the output tensor to a variable and iterate over them
-  float* out_vals = static_cast<float*>(TF_TensorData(output_values[0]));
-  for (int i = 0; i < 5; ++i)
-  {
-      std::cout << "Output values info: " << *out_vals++ << "\n";
-  }
-
-  fprintf(stdout, "Successfully run session\n");
-
-//void* output_data = TF_TensorData(output_values[0]);
-//assert(TF_GetCode(status) == TF_OK);
-if (TF_GetCode(status) != TF_OK) {
-          fprintf(stderr, "ERROR: Unable to run session %s", TF_Message(status));        
-          return 1;
-  } 
-  TF_CloseSession( session, status );
-  TF_DeleteSession( session, status );
-  TF_DeleteSessionOptions( sess_opts );      
-  TF_DeleteStatus(status);
-  TF_DeleteImportGraphDefOptions(opts);
-  TF_DeleteGraph(graph);                                                                  
-  return 0;
-  */
-//---------------------------------------------------------------------------------------	
-  /*
-TF_Status* s = TF_NewStatus();
-TF_Status * status = TF_NewStatus();
-  
 	
-TF_Graph* graph = TF_NewGraph();
-	
-  TF_SessionOptions * options = TF_NewSessionOptions();
-  TF_Session * session = TF_NewSession( graph, options, status );
-  char hello[] = "Hello TensorFlow!";
-  TF_Tensor * tensor = TF_AllocateTensor( TF_STRING, 0, 0, 8 + TF_StringEncodedSize( strlen( hello ) ) );
-  TF_Tensor * tensorOutput;
-  TF_OperationDescription * operationDescription = TF_NewOperation( graph, "Const", "hello" );
-  TF_Operation * operation; 
-  struct TF_Output output;
-
-  TF_StringEncode( hello, strlen( hello ), 8 + ( char * ) TF_TensorData( tensor ), TF_StringEncodedSize( strlen( hello ) ), status );
-  memset( TF_TensorData( tensor ), 0, 8 );
-  TF_SetAttrTensor( operationDescription, "value", tensor, status );
-  TF_SetAttrType( operationDescription, "dtype", TF_TensorType( tensor ) );
-  operation = TF_FinishOperation( operationDescription, status );
-
-  output.oper = operation;
-  output.index = 0;
-
-  TF_SessionRun( session, 0,
-                 0, 0, 0,  // Inputs
-                 &output, &tensorOutput, 1,  // Outputs
-                 &operation, 1,  // Operations
-                 0, status );
-
-  printf( "status code: %i\n", TF_GetCode( status ) );
-  printf( "%s\n", ( ( char * ) TF_TensorData( tensorOutput ) ) + 9 );
-
-  TF_CloseSession( session, status );
-  TF_DeleteSession( session, status );
-  TF_DeleteStatus( status );
-  TF_DeleteSessionOptions( options );  
-
-  return 0;
-  
-}
-
-
-
-/*
-//------------------------------------------------------------------------------------------------------------------
-TensorBuffer* 	TensorCApi::Buffer(const Tensor& tensor) 
-		{ 
-			return tensor.buf_; 
-		}
-Tensor 		TensorCApi::MakeTensor(TF_DataType type, const TensorShape& shape, TensorBuffer* buf) 
-		{
-			return Tensor(static_cast<DataType>(type), shape, buf);
-		}
-// Create an empty tensor of type 'dtype'. 'shape' can be arbitrary, but has to
- // result in a zero-sized tensor.
-class TensorCApi {
-public:
- static TensorBuffer* Buffer(const Tensor& tensor);
- static Tensor MakeTensor(TF_DataType type, const TensorShape& shape, TensorBuffer* buf);
-}
-// Put an image in the cameraImg mat
-cv::resize(image->image, cameraImg, cv::Size(inputwidth, inputheight), 0, 0, cv::INTER_AREA);
-// Create a new tensor pointing to that memory:
-const int64_t tensorDims[4] = {1,inputheight,inputwidth,3};
-int *imNumPt = new int(1);
-TF_Tensor* tftensor = TF_NewTensor(TF_DataType::TF_UINT8, tensorDims, 4, cameraImg.data, inputheight * inputwidth * 3, NULL, imNumPt);
-Tensor inputImg = tensorflow::TensorCApi::MakeTensor(tftensor->dtype, tftensor->shape, tftensor->buffer);
-//------------------------------------------------------------------------------------------------------------------
-
-#include <stdio.h>                                                                        
-#include <stdlib.h>                                                                       
-#include <tensorflow/c/c_api.h>                                                           
-
-
-TF_Buffer* read_file(const char* file);                                                   
-
-void free_buffer(void* data, size_t length) {                                             
-        free(data);                                                                       
-}                                              
-
-// Graph definition from unzipped https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
-  // which is used in the Go, Java and Android examples                                   
-  TF_Buffer* graph_def = read_file("tensorflow_inception_graph.pb");                      
-  TF_Graph* graph = TF_NewGraph();
-// Import graph_def into graph                                                          
-  TF_Status* status = TF_NewStatus();                                                     
-  TF_ImportGraphDefOptions* opts = TF_NewImportGraphDefOptions();                         
-  TF_GraphImportGraphDef(graph, graph_def, opts, status);
-  TF_DeleteImportGraphDefOptions(opts);
-  if (TF_GetCode(status) != TF_OK) {
-          fprintf(stderr, "ERROR: Unable to import graph %s", TF_Message(status));        
-          return 1;
-  }       
-  fprintf(stdout, "Successfully imported graph");                                         
-  TF_DeleteStatus(status);
-  TF_DeleteBuffer(graph_def);                                                             
-
-  // Use the graph                                                                        
-  TF_DeleteGraph(graph);                                                                  
-  return 0;
-
-
-
-//------------------------------------------------------------------------------------------------------------------
-const char* graph_def_data; // <-- your serialized GraphDef here
-TF_Buffer graph_def = {graph_def_data, strlen(graph_def_data), nullptr};
-// Import `graph_def` into `graph`
-TF_ImportGraphDefOptions* import_opts = TF_NewImportGraphDefOptions();
-TF_ImportGraphDefOptionsSetPrefix(import_opts, "import");
-TF_GraphImportGraphDef(graph, &graph_def, import_opts, s);
-assert(TF_GetCode(s) == TF_OK);
-
-// Setup graph inputs
-std::vector<TF_Output> inputs;
-std::vector<TF_Tensor*> input_values;
-// Add the placeholders you would like to feed, e.g.:
-TF_Operation* placeholder = TF_GraphOperationByName(graph, "import/my_placeholder");
-inputs.push_back({placeholder, 0});
-TF_Tensor* tensor = TF_NewTensor(/*...*/
-/*
-input_values.push_back(tensor);
-
-// Setup graph outputs
-std::vector<TF_Output> outputs;
-// Add the node outputs you would like to fetch, e.g.:
-TF_Operation* output_op = TF_GraphOperationByName(graph, "import/my_output");
-outputs.push_back({output_op, 0});
-std::vector<TF_Tensor*> output_values(outputs.size(), nullptr);
-
-// Run `graph`
-TF_SessionOptions* sess_opts = TF_NewSessionOptions();
-TF_Session* session = TF_NewSession(graph, sess_opts, s);
-assert(TF_GetCode(s) == TF_OK);
-TF_SessionRun(session, nullptr,
-              &inputs[0], &input_values[0], inputs.size(),
-              &outputs[0], &output_values[0], outputs.size(),
-              nullptr, 0, nullptr, s);
-
-void* output_data = TF_TensorData(output_values[0]);
-assert(TF_GetCode(s) == TF_OK);
-
-// If you have a more complicated workflow, I suggest making scoped wrapper
-// classes that call these in their destructors
-for (int i = 0; i < inputs.size(); ++i) TF_DeleteTensor(input_values[i]);
-for (int i = 0; i < outputs.size(); ++i) TF_DeleteTensor(output_values[i]);
-TF_CloseSession(session, s);
-TF_DeleteSession(session, s);
-TF_DeleteSessionOptions(sess_opts);
-TF_DeleteImportGraphDefOptions(import_opts);
-TF_DeleteGraph(graph);
-TF_DeleteStatus(s);
-*/
-	ret = g_program_options.program_use->function(cap, disp, &g_program_options,
-		DrTfSession.session, &DrTfSession.inputs[0], &DrTfSession.input_values[0], DrTfSession.ninputs,
-		&DrTfSession.outputs[0], &DrTfSession.output_values[0], DrTfSession.noutputs);
+	ret = g_program_options.program_use->function(cap, disp, &g_program_options, drtfsession);
 //TF_CloseSession( tfses->session, status );
   //TF_DeleteSession( tfses->session, status );
   //TF_DeleteSessionOptions( sess_opts );      
   //TF_DeleteStatus(status);
   //TF_DeleteImportGraphDefOptions(opts);
   //TF_DeleteGraph(graph);        
+  delete pdata;
 	return ret;
 }
 

@@ -65,64 +65,15 @@
   #ifdef BadColor
  #undef BadColor
   #endif
-  /*
-  #include <vector>
-  #include "tensorflow/core/framework/graph.pb.h"
-#include "tensorflow/core/framework/tensor.h"
-#include "tensorflow/core/graph/default_device.h"
-#include "tensorflow/core/graph/graph_def_builder.h"
-#include "tensorflow/core/lib/core/errors.h"
-#include "tensorflow/core/lib/core/stringpiece.h"
-#include "tensorflow/core/lib/core/threadpool.h"
-#include "tensorflow/core/lib/io/path.h"
-#include "tensorflow/core/lib/strings/stringprintf.h"
-#include "tensorflow/core/platform/init_main.h"
-#include "tensorflow/core/platform/logging.h"
-#include "tensorflow/core/platform/types.h"
-#include "tensorflow/core/public/session.h"
-#include "tensorflow/core/util/command_line_flags.h"
-#include "tensorflow/core/platform/env.h"
-// These are all common classes it's handy to reference with no namespace.
-using tensorflow::Flag;
-using tensorflow::Tensor;
-using tensorflow::Status;
-using tensorflow::string;
-using tensorflow::int32;
-*/
+  
 
   //ali
-  #include <assert.h>
-#include <iostream>
-#include <vector>
-#include "tensorflow/c/c_api.h"
-  #include <fstream>
-/*
-  TF_Buffer* read_file(const char* file); 
-void free_buffer(void* data, size_t length) {                                             
-        free(data);  
-}
-static void Deallocator(void* data, size_t length, void* arg) {
-        free(data);
-        // *reinterpret_cast<bool*>(arg) = true;
-}
-TF_Buffer* read_file(const char* file) {                                                  
-  FILE *f = fopen(file, "rb");
-  fseek(f, 0, SEEK_END);
-  long fsize = ftell(f);                                                                  
-  fseek(f, 0, SEEK_SET);  //same as rewind(f);                                            
+ // #include <assert.h>
+//#include <iostream>
+//#include <vector>
+//#include "tensorflow/c/c_api.h"
+//  #include <fstream>
 
-  void* data = malloc(fsize);                                                             
-  fread(data, fsize, 1, f);
-  fclose(f);
-
-  TF_Buffer* buf = TF_NewBuffer();                                                        
-  buf->data = data;
-  buf->length = fsize;                                                                    
-  buf->data_deallocator = free_buffer;                                                    
-  return buf;
-} 
-  //ali
- */ 
 int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb){
 	unsigned char yy,uu,vv;
 	float fr,fg,fb,ym16,um128,vm128;
@@ -506,87 +457,7 @@ int stop_stream(int fd, struct options* opt)
 	}
 	return ioctl(fd, VIDIOC_STREAMOFF, &type);
 }
-/*
-// Reads a model graph definition from disk, and creates a session object you
-// can use to run it.
-Status LoadGraph(string graph_file_name, std::unique_ptr<tensorflow::Session>* session) {
-	tensorflow::GraphDef graph_def;
-	Status load_graph_status = ReadBinaryProto(tensorflow::Env::Default(), graph_file_name, &graph_def);
-	if (!load_graph_status.ok()) {
-		return tensorflow::errors::NotFound("Failed to load compute graph at '",graph_file_name, "'");
-	}
-	session->reset(tensorflow::NewSession(tensorflow::SessionOptions()));
-	Status session_create_status = (*session)->Create(graph_def);
-	if (!session_create_status.ok()) {
-		return session_create_status;
-	}
-	return Status::OK();
-}
-// Analyzes the output of the Inception graph to retrieve the highest scores and
-// their positions in the tensor, which correspond to categories.
-Status GetTopLabels(const std::vector<Tensor>& outputs, int how_many_labels,Tensor* out_indices, Tensor* out_scores) {
-	const Tensor& unsorted_scores_tensor = outputs[0];
-	auto unsorted_scores_flat = unsorted_scores_tensor.flat<float>();
-	std::vector<std::pair<int, float>> scores;
-	for (int i = 0; i < unsorted_scores_flat.size(); ++i) {
-		scores.push_back(std::pair<int, float>({i, unsorted_scores_flat(i)}));
-	}
-	std::sort(scores.begin(), scores.end(),[](const std::pair<int, float>& left,const std::pair<int, float>& right) {return left.second > right.second;});
-	scores.resize(how_many_labels);
-	Tensor sorted_indices(tensorflow::DT_INT32, {scores.size()});
-	Tensor sorted_scores(tensorflow::DT_FLOAT, {scores.size()});
-	for (int i = 0; i < scores.size(); ++i) {
-		sorted_indices.flat<int>()(i) = scores[i].first;
-		sorted_scores.flat<float>()(i) = scores[i].second;
-	}
-	*out_indices = sorted_indices;
-	*out_scores = sorted_scores;
-	return Status::OK();
-}
 
-// Takes a file name, and loads a list of labels from it, one per line, and
-// returns a vector of the strings. It pads with empty strings so the length
-// of the result is a multiple of 16, because our model expects that.
-Status ReadLabelsFile(string file_name, std::vector<string>* result, size_t* found_label_count) {
-	std::ifstream file(file_name);
-	if (!file) {
-		return tensorflow::errors::NotFound("Labels file ", file_name, " not found.");
-	}
-	result->clear();
-	string line;
-	while (std::getline(file, line)) {
-		result->push_back(line);
-	}
-	*found_label_count = result->size();
-	const int padding = 16;
-	while (result->size() % padding) {
-		result->emplace_back();
-	}
-	return Status::OK();
-}
-
-// Given the output of a model run, and the name of a file containing the labels
-// this prints out the top five highest-scoring values.
-Status PrintTopLabels(const std::vector<Tensor>& outputs,const std::vector<string>& labels, int label_count, float print_threshold) {
-	const int how_many_labels = std::min(5, static_cast<int>(label_count));
-	Tensor indices;
-	Tensor scores;
-	TF_RETURN_IF_ERROR(GetTopLabels(outputs, how_many_labels, &indices, &scores));
-	tensorflow::TTypes<float>::Flat scores_flat = scores.flat<float>();
-	tensorflow::TTypes<int32>::Flat indices_flat = indices.flat<int32>();
-	for (int pos = 0; pos < how_many_labels; ++pos) {
-		const int label_index = indices_flat(pos);
-		const float score = scores_flat(pos);
-		std::cout << labels[label_index] << " (" << label_index << "): " << score<<" \t";
-		// Print the top label to stdout if it's above a threshold.
-		if ((pos == 0) && (score > print_threshold)) {
-			//std::cout << labels[label_index] << std::endl;
-		}
-	}
-	std::cout << std::endl;
-	return Status::OK();
-}
-*/
 
 /**
  * Video capture and display loop.
@@ -595,19 +466,15 @@ Status PrintTopLabels(const std::vector<Tensor>& outputs,const std::vector<strin
  * @param disp Display Data management structure with GPU handles.
  * @return error status of the function. Value 0 is returned on success.
  */
-int capture_display_yuv(struct capture_context *cap, struct display_context *disp, struct options* opt,
-	TF_Session* session, const TF_Output* inputs, TF_Tensor* const* input_values, 
-	int ninputs,const TF_Output* outputs, TF_Tensor** output_values, int noutputs)
+int capture_display_yuv(struct capture_context *cap, struct display_context *disp, struct options* opt, Dragon_TFSession * drtfsession)
 
-    // RunOptions// Input tensors    // Output tensors    // Target operations    // RunMetadata    // Output status
-	//session, nullptr, &inputs[0], &input_values[0], inputs.size(),
-        //      &outputs[0], &output_values[0], outputs.size(), nullptr, 0, nullptr, status
+   
 {
 	struct timeval t1, t2,t3,t4,t5,t6,t7,t8,t9;
 	struct timezone tz;
 	float deltatime,deltatime2,deltatime3,deltatime4,deltatime5,deltatime6,totaltime=0.0f,totaltime3=0.0f;
 	unsigned int frames=0;
-	TF_Status* status = TF_NewStatus(); 
+	
 	int ret = 0;
 	struct v4l2_buffer buf;
 	struct v4l2_plane planes[VIDEO_MAX_PLANES];
@@ -637,104 +504,11 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		LOGS_ERR("Error setting up display aborting capture");
 		return -1;
 	}
-	/*
-	//---------------------------------------------------------------------------------------
-	// Graph definition from unzipped https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip
-	  // which is used in the Go, Java and Android examples                                   
-	  TF_Buffer* graph_def = read_file("/home/linaro/label/output_graph.pb");                      
-	  TF_Graph* graph = TF_NewGraph();
-	// Import graph_def into graph                                                          
-	  TF_Status* status = TF_NewStatus();                                                     
-	  TF_ImportGraphDefOptions* opts = TF_NewImportGraphDefOptions();                         
-	  TF_GraphImportGraphDef(graph, graph_def, opts, status);
-	  TF_DeleteImportGraphDefOptions(opts);
-	  if (TF_GetCode(status) != TF_OK) {
-		  fprintf(stderr, "ERROR: Unable to import graph %s", TF_Message(status));        
-		  return 1;
-	  }       
-	  fprintf(stdout, "Successfully imported graph");
-	  // Setup graph inputs
-	std::vector<TF_Output> inputs;
-	std::vector<TF_Tensor*> input_values;
+	
 
-	// Add the placeholders you would like to feed, e.g.:
-	TF_Operation* placeholder = TF_GraphOperationByName(graph, "input");
-	inputs.push_back({placeholder, 0});
-*/
-/*	// Create a new tensor pointing to that memory:
-	int 	inputwidth=224;
-	int	inputheight=224;
-	int 	*imNumPt = new int(1);
-	const 	int64_t tensorDims[4] = {1,inputheight,inputwidth,3};
-	const 	int 	num_bytes=inputheight * inputwidth * 3* sizeof(float);
-	const int num_bytes_out = 5 * sizeof(float);
-
-	int64_t out_dims[] = {1, 5};
-	float mmf[224*224*3];
-/*
-	TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, &disp->render_ctx.f_rgbbuf[0],num_bytes , NULL, imNumPt);
-	input_values.push_back(tensor);
-	// Optionally, you can check that your input_op and input tensors are correct
-	  // by using some of the functions provided by the C API.
-	  std::cout << "Input op info: " << TF_OperationNumOutputs(placeholder) << "\n";
-	  std::cout << "Input data info: " << TF_Dim(tensor, 0) << "\n";
-	fprintf(stdout, "success 1"); 
-
-	// Setup graph outputs
-	std::vector<TF_Output> outputs;
-	// Add the node outputs you would like to fetch, e.g.:
-	TF_Operation* output_op = TF_GraphOperationByName(graph, "final_result");
-	//fprintf(stdout, "success 2");
-	outputs.push_back({output_op, 0});
-	//fprintf(stdout, "success 3");
-	std::vector<TF_Tensor*> output_values(outputs.size(), nullptr);
-
-	// Similar to creating the input tensor, however here we don't yet have the
-	  // output values, so we use TF_AllocateTensor()
-/*	  TF_Tensor* output_value = TF_AllocateTensor(TF_FLOAT, out_dims, 2, num_bytes_out);
-	  output_values.push_back(output_value);
-
-	  // As with inputs, check the values for the output operation and output tensor
-/*	  std::cout << "Output: " << TF_OperationName(output_op) << "\n";
-	  std::cout << "Output info: " << TF_Dim(output_value, 0) << "\n";
-*/
-/*
-	// Run `graph`
-	TF_SessionOptions* sess_opts = TF_NewSessionOptions();
-	TF_Session* session = TF_NewSession(graph, sess_opts, status);
-	//assert(TF_GetCode(status) == TF_OK);
-	if (TF_GetCode(status) != TF_OK) {
-		  fprintf(stderr, "ERROR: Unable to new session %s", TF_Message(status));        
-		  return 1;
-	  }
+	
 	  
-/* 	tensorflow
-	  
-	// creating a Tensor for storing the data
-	tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,224,224,3}));
-	auto input_tensor_mapped = input_tensor.tensor<float, 4>();
-	 // First we load and initialize the model.
-	string root_dir = "/home/linaro/label";
-	string graph ="output_graph.pb";
-	string labels_file_name ="output_labels.txt";
-	string input_layer = "input";
-	string output_layer = "final_result";
-	int print_threshold = 50;
-	std::unique_ptr<tensorflow::Session> session;
-	string graph_path = tensorflow::io::JoinPath(root_dir, graph);
-	Status load_graph_status = LoadGraph(graph_path, &session);
-	if (!load_graph_status.ok()) {
-		LOG(ERROR) << load_graph_status;
-		return -1;
-	}
-	std::vector<string> labels;
-	size_t label_count;
-	Status read_labels_status = ReadLabelsFile(labels_file_name, &labels, &label_count);
-	if (!read_labels_status.ok()) {
-		LOG(ERROR) << read_labels_status;
-	return -1;
-	}
-*/
+
 	gettimeofday (&t1, &tz);
 	/* Continue until an error occurs or external signal requests an exit */
 	while(!ret && !signal_quit)
@@ -792,109 +566,15 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 				conv_nv12_rgb((unsigned char *)disp->render_ctx.buffers[0], (unsigned char *)disp->render_ctx.buffers[1], &disp->render_ctx.rgbbuf[0]);
 			}
 			gettimeofday (&t6, &tz);
-			deltatime2 = (float)(t6.tv_sec - t5.tv_sec + (t6.tv_usec - t5.tv_usec) * 1e-6);
-/* 	tensorflow
-			int height = 224;
-			int width = 224;
-			int width2 = 320;
-			if(opt->splane)
-				width2=640;
-			int depth=3;
-			float mean = 128;
-			float std = 128;
-			float mm;
-			const unsigned char * source_data = &disp->render_ctx.rgbbuf[0];
-			for (int y = 0; y < height; ++y) {
-				//const unsigned char* source_row = source_data + (y * width2 * depth);
-				for (int x = 0; x < width; ++x) {
-					//const unsigned char* source_pixel = source_row + (x * depth);
-						for (int c = 0; c < depth; ++c) {
-							//const unsigned char* source_value = source_pixel + c;
-							mm=  (float)*source_data;//value;
-							//input_tensor_mapped(0, y, x, c) = (float) *source_data;//value;
-							source_data++;
-							//input_tensor_mapped(0, y, x, c) = (((float) *source_value)-mean)/std;
-						}
-				}
-			}
-//			printf("pic=%u %u %u  , %f  %f  %f\n",disp->render_ctx.rgbbuf[0+320*3*5],disp->render_ctx.rgbbuf[1+320*3*5],disp->render_ctx.rgbbuf[2+320*3*5],input_tensor_mapped(0, 5, 0, 0),input_tensor_mapped(0, 5, 0, 1),input_tensor_mapped(0, 5, 0, 2));
-*/	
-/*		std::vector<TF_Tensor*> input_values2;
-			TF_Tensor* tensor2 = TF_NewTensor(TF_FLOAT, tensorDims, 4, &disp->render_ctx.f_rgbbuf[0],num_bytes , NULL, imNumPt);
-			input_values2.push_back(tensor2);
-*/			
-			gettimeofday (&t7, &tz);
-			deltatime3 = (float)(t7.tv_sec - t6.tv_sec + (t7.tv_usec - t6.tv_usec) * 1e-6);
-/*	tensorflow		
-			//const Tensor& resized_tensor = input_tensor[0];
-			// Actually run the image through the model.
-			std::vector<Tensor> outputs;
-			Status run_status = session->Run({{input_layer, input_tensor}},{output_layer}, {}, &outputs);
-			if (!run_status.ok()) {
-				LOG(ERROR) << "Running model failed: " << run_status;
-				return -1;
-			}
-*/			
-			TF_SessionRun(session, nullptr, &inputs[0], &input_values[0], 1,//inputs.size(),
-				&outputs[0], &output_values[0], 1, nullptr, 0, nullptr, status);
-			for (int i = 0; i < 1; ++i){
-				//TF_DeleteTensor(input_values2[i]);
-				//TF_DeleteTensor(tensor2);
-			}
-			// Assign the values from the output tensor to a variable and iterate over them
-			  float* out_vals = static_cast<float*>(TF_TensorData(output_values[0]));
-			//  for (int i = 0; i < 5; ++i)
-			//  {
-		//std::cout << "rose:" << *out_vals++ << "\t"<< "dand:" << *out_vals++ << "\t"<< "daisy:" << *out_vals++ << "\t"<< "sunflow:" << *out_vals++ << "\t"<< "tulips:" << *out_vals++ << "\n";
-			//  }
+			deltatime3 = (float)(t6.tv_sec - t5.tv_sec + (t6.tv_usec - t5.tv_usec) * 1e-6);
 
-			//  fprintf(stdout, "\nSuccessfully run session\n");
-
-			//void* output_data = TF_TensorData(output_values[0]);
-			//assert(TF_GetCode(status) == TF_OK);
-			if (TF_GetCode(status) != TF_OK) {
-				  fprintf(stderr, "ERROR: Unable to run session %s", TF_Message(status));        
-				  return -1;
-			  } 
-			  
+			drtfsession->RunSession();  
 			  
 			gettimeofday (&t8, &tz);
-			deltatime4 = (float)(t8.tv_sec - t7.tv_sec + (t8.tv_usec - t7.tv_usec) * 1e-6);
-/*	tensorflow			
-			  // Do something interesting with the results we've generated.
-			Status print_status =PrintTopLabels(outputs, labels, label_count, print_threshold * 0.01f);
-			if (!print_status.ok()) {
-				LOG(ERROR) << "Running print failed: " << print_status;
-				return -1;
-			}
-*/		float ress=*out_vals++;
-		if(ress>0.59){
-			std::cout << "rose:" <<ress;
-		}
-		ress=*out_vals++;
-		if(ress>0.59){
-			std::cout << "dand:" <<ress;
-		}
-		ress=*out_vals++;
-		if(ress>0.59){
-			std::cout << "daisy:" <<ress;
-		}
-		ress=*out_vals++;
-		if(ress>0.59){
-			std::cout << "sunflower:" <<ress;
-		}
-		ress=*out_vals++;
-		if(ress>0.59){
-			std::cout << "tulips:" <<ress<<"\t";
-		}
+			deltatime4 = (float)(t8.tv_sec - t6.tv_sec + (t8.tv_usec - t6.tv_usec) * 1e-6);
 			
-			gettimeofday (&t9, &tz);
-			deltatime5 = (float)(t9.tv_sec - t8.tv_sec + (t9.tv_usec - t8.tv_usec) * 1e-6);
-		//std::cout << "rose:" << *out_vals++ << "   dand:" << *out_vals++ << "   daisy:" << *out_vals++  << "   sunflow:" << *out_vals++ << "   tulips:" << *out_vals++;
-		printf("   convert =%1.3f  load tensor=%1.3f  run model=%1.3f sec\n",deltatime2, deltatime3, deltatime4);
+			printf("   convert =%1.3f  run model=%1.3f sec\n", deltatime3, deltatime4);
 		  }
-			  //printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[0]);
-		//printf("the buffer index=%u\n",disp->render_ctx.rgbbuf[1]);
 		/*
 		 * Render the planes to the display.
 		 * Return value inidcates error or request to exit the capture-display loop.
@@ -920,8 +600,9 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		/* Requeue the last buffer, the memory should be duplicated in the GPU and no longer needed. */
 		ret = ioctl(cap->v4l2_fd, VIDIOC_QBUF, &buf);
 	}
-	  TF_CloseSession( session, status );
-	  TF_DeleteSession( session, status );
+	TF_Status* status = TF_NewStatus(); 
+	TF_CloseSession( drtfsession->session, status );
+	TF_DeleteSession( drtfsession->session, status );
 	  //TF_DeleteSessionOptions( sess_opts );      
 	  //TF_DeleteStatus(status);
 	  //TF_DeleteImportGraphDefOptions(opts);
@@ -1367,9 +1048,7 @@ void do_key_event(char keys[], int num_keys, struct display_context* disp)
  * @param opt User selected progam configuration options.
  * @return error status of the setup. Value 0 is returned on success.
  */
-int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt,
-	TF_Session* session, const TF_Output* inputs, TF_Tensor* const* input_values, 
-	int ninputs,const TF_Output* outputs, TF_Tensor** output_values, int noutputs)
+int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt,Dragon_TFSession * drtfsession)
 {
 		struct capture_context* cap = (capture_context*)cap_ctx;
 		struct display_context* disp = (display_context*)disp_ctx;
@@ -1413,9 +1092,7 @@ int capture_and_display(void* cap_ctx, void* disp_ctx, struct options* opt,
 		disp->callbacks.key_event = do_key_event;
 		disp->callbacks.private_context = cap;
 		/* Enter the capture display loop */
-		ret = capture_display_yuv(cap, disp, opt,
-		session, &inputs[0], &input_values[0], 1,//inputs.size(),
-		&outputs[0], &output_values[0], 1/*outputs.size()*/);
+		ret = capture_display_yuv(cap, disp, opt, drtfsession );
 		/* Cleanly release the buffers map and free them in the kernel on either error or exit request. */
 		capture_shutdown(cap, opt);
 

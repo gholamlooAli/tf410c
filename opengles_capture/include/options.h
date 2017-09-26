@@ -29,7 +29,8 @@
 #define OPTION_H__
 
 #include <sys/queue.h>
-#include "tensorflow/c/c_api.h"
+//#include "tensorflow/c/c_api.h"
+#include "tfdragon.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,9 +52,7 @@ struct options;
 /**
  * Function pointer for any test program entry points
  */
-typedef int (*usage_function)(void *capture, void* display, struct options*,
-           TF_Session* , const TF_Output* , TF_Tensor* const* , 
-           int ,const TF_Output* , TF_Tensor** , int );
+typedef int (*usage_function)(void *capture, void* display, struct options*,Dragon_TFSession * drtfsession);
 
 /**
  * Description of a test option to run from the command line.
