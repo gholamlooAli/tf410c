@@ -4,8 +4,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/capture.dir/display.cpp.o"
   "CMakeFiles/capture.dir/gles_egl_util.cpp.o"
   "CMakeFiles/capture.dir/tfdragon.cpp.o"
-  "../bin/capture.pdb"
-  "../bin/capture"
+  "../capture.pdb"
+  "../capture"
 )
 
 # Per-language clean rules from dependency scanning.

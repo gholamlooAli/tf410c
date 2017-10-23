@@ -65,64 +65,15 @@
   #ifdef BadColor
  #undef BadColor
   #endif
-  /*
-  #include <vector>
-  #include "tensorflow/core/framework/graph.pb.h"
-#include "tensorflow/core/framework/tensor.h"
-#include "tensorflow/core/graph/default_device.h"
-#include "tensorflow/core/graph/graph_def_builder.h"
-#include "tensorflow/core/lib/core/errors.h"
-#include "tensorflow/core/lib/core/stringpiece.h"
-#include "tensorflow/core/lib/core/threadpool.h"
-#include "tensorflow/core/lib/io/path.h"
-#include "tensorflow/core/lib/strings/stringprintf.h"
-#include "tensorflow/core/platform/init_main.h"
-#include "tensorflow/core/platform/logging.h"
-#include "tensorflow/core/platform/types.h"
-#include "tensorflow/core/public/session.h"
-#include "tensorflow/core/util/command_line_flags.h"
-#include "tensorflow/core/platform/env.h"
-// These are all common classes it's handy to reference with no namespace.
-using tensorflow::Flag;
-using tensorflow::Tensor;
-using tensorflow::Status;
-using tensorflow::string;
-using tensorflow::int32;
-*/
+  
 
   //ali
-  #include <assert.h>
-#include <iostream>
-#include <vector>
-#include "tensorflow/c/c_api.h"
-  #include <fstream>
-/*
-  TF_Buffer* read_file(const char* file); 
-void free_buffer(void* data, size_t length) {                                             
-        free(data);  
-}
-static void Deallocator(void* data, size_t length, void* arg) {
-        free(data);
-        // *reinterpret_cast<bool*>(arg) = true;
-}
-TF_Buffer* read_file(const char* file) {                                                  
-  FILE *f = fopen(file, "rb");
-  fseek(f, 0, SEEK_END);
-  long fsize = ftell(f);                                                                  
-  fseek(f, 0, SEEK_SET);  //same as rewind(f);                                            
+ // #include <assert.h>
+//#include <iostream>
+//#include <vector>
+//#include "tensorflow/c/c_api.h"
+//  #include <fstream>
 
-  void* data = malloc(fsize);                                                             
-  fread(data, fsize, 1, f);
-  fclose(f);
-
-  TF_Buffer* buf = TF_NewBuffer();                                                        
-  buf->data = data;
-  buf->length = fsize;                                                                    
-  buf->data_deallocator = free_buffer;                                                    
-  return buf;
-} 
-  //ali
- */ 
 int conv_nv12_rgb(unsigned char * py, unsigned char * puv, unsigned char * prgb){
 	unsigned char yy,uu,vv;
 	float fr,fg,fb,ym16,um128,vm128;
@@ -516,8 +467,6 @@ int stop_stream(int fd, struct options* opt)
  * @return error status of the function. Value 0 is returned on success.
  */
 int capture_display_yuv(struct capture_context *cap, struct display_context *disp, struct options* opt, Dragon_TFSession * drtfsession)
-
-   
 {
 	struct timeval t1, t2,t3,t4,t5,t6,t7,t8,t9;
 	struct timezone tz;

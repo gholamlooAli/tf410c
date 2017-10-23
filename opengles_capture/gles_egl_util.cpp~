@@ -233,7 +233,7 @@ void* gles_load_extension(const char* extension, const char* procedure_name)
 
 	if (available)
 	{
-		address = eglGetProcAddress(procedure_name);
+		address = (void*)eglGetProcAddress(procedure_name);
 	}
 	return address;
 }
@@ -251,7 +251,7 @@ void *egl_load_extension(EGLDisplay display, const char* extension, const char* 
 
 	if (available)
 	{
-		address = eglGetProcAddress(procedure_name);
+		address = (void*)eglGetProcAddress(procedure_name);
 	}
 	return address;
 }

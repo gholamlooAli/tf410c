@@ -40,16 +40,10 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
-
-#include "options.h"
-
-//#ifdef class Dragon_TFSession
-//#undef class Dragon_TFSession
-// #endif
 #include "capture.h"
 #include "display.h"
 #include "log.h"
-//#include "tfdragon.h"
+
 int VERBOSE = LOG_INFO;
 
 struct options g_program_options = {0};
@@ -331,14 +325,10 @@ int main(int argc, char * const argv[])
 	opt->pfdata=pdata;
 	DrTfSession.LoadGraph(pdata);
 	
-	ret = g_program_options.program_use->function(cap, disp, &g_program_options, drtfsession);
-//TF_CloseSession( tfses->session, status );
-  //TF_DeleteSession( tfses->session, status );
-  //TF_DeleteSessionOptions( sess_opts );      
-  //TF_DeleteStatus(status);
-  //TF_DeleteImportGraphDefOptions(opts);
-  //TF_DeleteGraph(graph);        
-  delete pdata;
+	//ret = g_program_options.program_use->function(cap, disp, &g_program_options, drtfsession);
+	
+	//close program
+	delete pdata;
 	return ret;
 }
 

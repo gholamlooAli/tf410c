@@ -49,30 +49,7 @@
 PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
 PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR;
 PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
-/**
- * Vertex shader, first stage produce texture and render positions.
- * Shaders included in code for simplicity but could be external files.
- */
-static const char nv12_vertex_code[] =
-	//"#version 300 es\n"
-	"//VERTEX_SHADER\n"
-	//"layout(location = 0) in vec4 a_position;\n"
-	//"layout(location = 1) in vec2 a_tex_coord;\n"
-	//"out vec2 v_tex_coord;\n"
-	
-	"attribute vec4 a_position;\n"
-	"attribute vec2 a_tex_coord;\n"
-	"varying vec2 v_tex_coord;\n"
-	
-	"void main()\n"
-	"{\n"
-	"   gl_Position = a_position;\n"
-	"   v_tex_coord = a_tex_coord;\n"
-	"}\n";
-	
 
-
- 
 
 /**
  * Create a full screen native window and setup events to watch.
@@ -473,7 +450,12 @@ int render_nv12m_subs_tex(struct display_context *disp, struct options* opt, str
 	//glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, disp->width, disp->height,GL_LUMINANCE, GL_UNSIGNED_BYTE, disp->render_ctx.buffers[0]);
 		glBindTexture(GL_TEXTURE_2D, disp->texture[0]);
 		if(opt->ddump){
-			glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, opt->im_width, opt->im_height, /*disp->width,disp->height,*/GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, disp->render_ctx.buffers[0]);
+			if(opt->rgbinput){
+				glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, opt->im_width, opt->im_height, /*disp->width,disp->height,*/GL_RGB, GL_UNSIGNED_BYTE, &disp->render_ctx.rgbbuf[0]);
+			}
+			else{
+				glTexSubImage2D(GL_TEXTURE_2D, 0,0, 0, opt->im_width, opt->im_height, /*disp->width,disp->height,*/GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, disp->render_ctx.buffers[0]);
+			}
 		}
 		else{
 			if(opt->rgbinput){
@@ -610,6 +592,77 @@ int setTexParam2(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R_OES, GL_CLAMP_TO_EDGE);
 	return 0;
 }
+int	loadProgShader(	struct display_context* disp, struct options* opt, struct capture_context *cap)
+{
+	/*
+	 * Compile the shader program, consisting of both a vertex and fragment shader.
+	 * The vertex generates the positions for the current pixel and texture position.
+	 * The fragment shader lookups the Luma and chroma textures and converts them to a RGB color per pixel.
+	 * RGB is required by the OpenGL renderer on Linux without extensions such as the VPDAU or VAAPI.
+	 * The compiled program handle is returned and loaded by the render routine.
+	 */
+	
+	
+	
+	if(opt->ddump){	//direct dump to memory
+		
+		if(opt->eglimage){
+			
+			GCHK(disp->program[0] = gles_load_program("nv12vertex.glsl", "uyvy_egl.glsl"));
+			
+		}
+		else{
+			if(opt->splane){
+				GCHK(disp->program[0] = gles_load_program("nv12vertex.glsl", "frgb_input_render_es1.glsl"));
+				//GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "yuyv_to_rgb_texture.glsl"));
+			}
+			else{
+				GCHK(disp->program[0] = gles_load_program("nv12vertex.glsl", "uyvy_to_rgb_texture.glsl"));
+			}
+		}
+		
+	}
+	else{
+		if(opt->rgbinput){
+			GCHK(disp->program[0] = gles_load_program("nv12vertex.glsl", "frgb_input_render.glsl"));
+		}
+		else{
+			if(opt->eglimage){
+				GCHK(disp->program[0] = gles_load_program("nv12vertex.glsl", "nv12fragegl.glsl"));
+			}
+			else{
+				GCHK(disp->program[0] = gles_load_program("nv12vertex.glsl", "nv12frag.glsl"));
+			}
+			GCHK(disp->location[1] = glGetUniformLocation(disp->program[0], "s_chroma_texture"));
+		}
+	}
+	if(opt->rgbtext)
+	{
+		if(opt->splane){
+			GCHK(disp->program[1] = gles_load_program("nv12vertex.glsl", "frgb_render_es1.glsl"));
+		}
+		else{
+			GCHK(disp->program[1] = gles_load_program("nv12vertex.glsl", "frgb_render.glsl"));
+		}
+		GCHK(disp->location[5] = glGetUniformLocation(disp->program[1], "uimage_width"));
+		GCHK(disp->location[6] = glGetUniformLocation(disp->program[1], "uimage_height"));
+		GCHK(disp->location[7] = glGetUniformLocation(disp->program[1], "s_luma_texture"));
+		
+	}
+	else{
+		
+	}
+	/*
+	 * Get a handle to the s_luma_texture variable in the fragment shader.
+	 * This handle is used to update the texture with each new camera frame.
+	 */
+	
+	
+	GCHK(disp->location[0] = glGetUniformLocation(disp->program[0], "s_luma_texture"));
+	GCHK(disp->location[2] = glGetUniformLocation(disp->program[0], "uimage_width"));
+	GCHK(disp->location[3] = glGetUniformLocation(disp->program[0], "uimage_height"));
+	GCHK(disp->location[4] = glGetUniformLocation(disp->program[0], "image_proc"));
+}
 /**
  * Display and GPU setup for a YUV420 texture display.
  * Setup a full screen window and utilize EGL and OpenGLES to setup the display_context.
@@ -679,75 +732,8 @@ int camera_nv12m_setup(struct display_context* disp, struct render_context *rend
 	}
 	/* Process any pending events, this will draw the initial window on the screen */
 	x11_process_pending_events(disp);
+	loadProgShader(disp, opt, cap);
 
-	/*
-	 * Compile the shader program, consisting of both a vertex and fragment shader.
-	 * The vertex generates the positions for the current pixel and texture position.
-	 * The fragment shader lookups the Luma and chroma textures and converts them to a RGB color per pixel.
-	 * RGB is required by the OpenGL renderer on Linux without extensions such as the VPDAU or VAAPI.
-	 * The compiled program handle is returned and loaded by the render routine.
-	 */
-	
-	
-	
-	if(opt->ddump){	//direct dump to memory
-		
-		if(opt->eglimage){
-			
-			GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "uyvy_egl.glsl"));
-			
-		}
-		else{
-			if(opt->splane){
-				GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "frgb_input_render_es1.glsl"));
-				//GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "yuyv_to_rgb_texture.glsl"));
-			}
-			else{
-				GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "uyvy_to_rgb_texture.glsl"));
-			}
-		}
-		
-	}
-	else{
-		if(opt->rgbinput){
-			GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "frgb_input_render.glsl"));
-		}
-		else{
-			if(opt->eglimage){
-				GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "nv12fragegl.glsl"));
-			}
-			else{
-				GCHK(disp->program[0] = gles_load_program(nv12_vertex_code, "nv12frag.glsl"));
-			}
-			GCHK(disp->location[1] = glGetUniformLocation(disp->program[0], "s_chroma_texture"));
-		}
-	}
-	if(opt->rgbtext)
-	{
-		if(opt->splane){
-			GCHK(disp->program[1] = gles_load_program(nv12_vertex_code, "frgb_render_es1.glsl"));
-		}
-		else{
-			GCHK(disp->program[1] = gles_load_program(nv12_vertex_code, "frgb_render.glsl"));
-		}
-		GCHK(disp->location[5] = glGetUniformLocation(disp->program[1], "uimage_width"));
-		GCHK(disp->location[6] = glGetUniformLocation(disp->program[1], "uimage_height"));
-		GCHK(disp->location[7] = glGetUniformLocation(disp->program[1], "s_luma_texture"));
-		
-	}
-	else{
-		
-	}
-	/*
-	 * Get a handle to the s_luma_texture variable in the fragment shader.
-	 * This handle is used to update the texture with each new camera frame.
-	 */
-	
-	
-	GCHK(disp->location[0] = glGetUniformLocation(disp->program[0], "s_luma_texture"));
-	GCHK(disp->location[2] = glGetUniformLocation(disp->program[0], "uimage_width"));
-	GCHK(disp->location[3] = glGetUniformLocation(disp->program[0], "uimage_height"));
-	GCHK(disp->location[4] = glGetUniformLocation(disp->program[0], "image_proc"));
 	/*
 	 * Get a handle to the s_chroma_texture variable in the fragment shader.
 	 * This handle is used to update the texture with each new camera frame.
@@ -793,17 +779,23 @@ int camera_nv12m_setup(struct display_context* disp, struct render_context *rend
 	
 	glBindTexture(GL_TEXTURE_2D, disp->texture[0]);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	if(opt->ddump){
-		GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width,opt->im_height,/*disp->width, disp->height,*/ 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
-		setTexParam2();
+	if(opt->rgbinput){
+			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB	, opt->im_width, opt->im_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL));
+			setTexParam();
 	}
 	else{
-		if(opt->rgbinput){
-			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,opt->im_width,opt->im_height,/*disp->width, disp->height,*/ 0, GL_RGB, GL_UNSIGNED_BYTE, NULL));
-			setTexParam();
+		if(opt->ddump){
+			
+			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width,opt->im_height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
+			setTexParam2();
 		}
 		else{
-			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE,opt->im_width,opt->im_height,/*disp->width, disp->height,*/ 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL));
+			
+			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE,opt->im_width,opt->im_height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL));
+			setTexParam();
+			glBindTexture(GL_TEXTURE_2D, disp->texture[1]);
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width/2,opt->im_height/2, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
 			setTexParam();
 		}
 	}
@@ -829,15 +821,6 @@ int camera_nv12m_setup(struct display_context* disp, struct render_context *rend
 	 * The texture lookup will replicate the chroma values up to the total resolution.
 	 */
 	
-	if(!opt->ddump){
-		if(!opt->rgbinput){
-			glBindTexture(GL_TEXTURE_2D, disp->texture[1]);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			GCHK(glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA,opt->im_width/2,opt->im_height/2/*disp->width/2, disp->height/2*/, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL));
-			setTexParam();
-		}
-
-	}
 	if(opt->rgbtext){
 		glBindTexture(GL_TEXTURE_2D, disp->texture[2]);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

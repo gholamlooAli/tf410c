@@ -184,7 +184,7 @@ GLuint gles_load_program(const char *vertex_code, const char *fragment_code)
 	GLuint fragment_shader;
 	GLuint program;
 	GLint status;
-	vertex_shader = gles_load_shader(GL_VERTEX_SHADER, vertex_code);
+	vertex_shader = gles_load_shader_file(GL_VERTEX_SHADER, vertex_code);
 	fragment_shader = gles_load_shader_file(GL_FRAGMENT_SHADER, fragment_code);
 	if (!vertex_shader || !fragment_shader)
 	{

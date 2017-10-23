@@ -11,21 +11,21 @@ class  Dragon_TFSession
 {
  public:       
 	TF_Session* session;
-	//const TF_Output* inputs;
-	//TF_Tensor* const* input_values;
 	int ninputs;
         float *pdata;
-	//const TF_Output* outputs;
-	//TF_Tensor** output_values;
 	int noutputs;
 	std::vector<TF_Output> inputs;
 	std::vector<TF_Tensor*> input_values;
 	std::vector<TF_Output> outputs;
 	std::vector<TF_Tensor*> output_values;
-	
+	std::vector<TF_Output> inputs2;
+	std::vector<TF_Tensor*> input_values2;
 
 	Dragon_TFSession()      {}
-	~Dragon_TFSession()     {}
+	~Dragon_TFSession() ;    
+	
+	
+	
 	int LoadGraph(float *pfdata);
 	int RunSession(void);
 };

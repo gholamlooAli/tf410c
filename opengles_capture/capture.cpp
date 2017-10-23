@@ -467,8 +467,6 @@ int stop_stream(int fd, struct options* opt)
  * @return error status of the function. Value 0 is returned on success.
  */
 int capture_display_yuv(struct capture_context *cap, struct display_context *disp, struct options* opt, Dragon_TFSession * drtfsession)
-
-   
 {
 	struct timeval t1, t2,t3,t4,t5,t6,t7,t8,t9;
 	struct timezone tz;
@@ -600,13 +598,7 @@ int capture_display_yuv(struct capture_context *cap, struct display_context *dis
 		/* Requeue the last buffer, the memory should be duplicated in the GPU and no longer needed. */
 		ret = ioctl(cap->v4l2_fd, VIDIOC_QBUF, &buf);
 	}
-	TF_Status* status = TF_NewStatus(); 
-	TF_CloseSession( drtfsession->session, status );
-	TF_DeleteSession( drtfsession->session, status );
-	  //TF_DeleteSessionOptions( sess_opts );      
-	  //TF_DeleteStatus(status);
-	  //TF_DeleteImportGraphDefOptions(opts);
-	  //TF_DeleteGraph(graph);                  
+	
 	
 	return 0;
 }

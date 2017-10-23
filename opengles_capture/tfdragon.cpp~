@@ -31,8 +31,8 @@ TF_Buffer* read_file(const char* file) {
 int Dragon_TFSession::RunSession(void)
 {
 	TF_Status* status = TF_NewStatus(); 
-	TF_SessionRun(session, nullptr, &inputs[0], &input_values[0], 1,//inputs.size(),
-				&outputs[0], &output_values[0], 1, nullptr, 0, nullptr, status);
+	TF_SessionRun(session, nullptr, &inputs[0], &input_values[0],ninputs,
+			&outputs[0], &output_values[0], noutputs, nullptr, 0, nullptr, status);
 	// Assign the values from the output tensor to a variable and iterate over them
 	float* out_vals = static_cast<float*>(TF_TensorData(output_values[0]));
 	if (TF_GetCode(status) != TF_OK) {
@@ -54,6 +54,18 @@ int Dragon_TFSession::RunSession(void)
 		
 	return 0;
 }
+Dragon_TFSession::~Dragon_TFSession()
+{
+	fprintf(stdout, "Successfully class Dragon_TFSession destructed\n");
+	TF_Status* status = TF_NewStatus(); 
+	TF_CloseSession( session, status );
+	TF_DeleteSession( session, status );
+  //TF_DeleteSessionOptions( sess_opts );      
+	TF_DeleteStatus(status);
+  //TF_DeleteImportGraphDefOptions(opts);
+  //TF_DeleteGraph(graph);
+	
+}
 //ali */
 int Dragon_TFSession::LoadGraph(float* pfdata)
 {
@@ -71,13 +83,9 @@ int Dragon_TFSession::LoadGraph(float* pfdata)
 	if (TF_GetCode(status) != TF_OK) {
 		fprintf(stderr, "ERROR: Unable to import graph %s", TF_Message(status));        
 		return -1;
-	}       
-	fprintf(stdout, "Successfully imported graph");
-	/*
-	// Setup graph inputs
-	std::vector<TF_Output> inputs;
-	std::vector<TF_Tensor*> input_values;
-	*/
+	}   	
+TF_Operation* pp = TF_GraphOperationByName(graph, "MobilenetV1/Conv2d_0/weights");	
+	fprintf(stdout, "Successfully imported graph=====%d\n",pp->size());
 	// Add the placeholders you would like to feed, e.g.:
 	TF_Operation* placeholder = TF_GraphOperationByName(graph, "input");
 	inputs.push_back({placeholder, 0});
@@ -91,23 +99,17 @@ int Dragon_TFSession::LoadGraph(float* pfdata)
 	const 	int 	num_bytes_out = 5 * sizeof(float);
 
 	int64_t out_dims[] = {1, 5};
-	//float *pdata = new float[224*224*3];
-
-	TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, pfdata/*&disp->render_ctx.f_rgbbuf[0]*/,num_bytes , NULL, imNumPt);
+	
+	TF_Tensor* tensor = TF_NewTensor(TF_FLOAT, tensorDims, 4, pfdata,num_bytes , NULL, imNumPt);
 	input_values.push_back(tensor);
 	// Optionally, you can check that your input_op and input tensors are correct
 	  // by using some of the functions provided by the C API.
 	std::cout << "Input op info: " << TF_OperationNumOutputs(placeholder) << "\n";
 	std::cout << "Input data info: " << TF_Dim(tensor, 0) << "\n";
-	fprintf(stdout, "success 1"); 
-
+	
 	// Setup graph outputs
-	//std::vector<TF_Output> outputs;
-	// Add the node outputs you would like to fetch, e.g.:
 	TF_Operation* output_op = TF_GraphOperationByName(graph, "final_result");
-	//fprintf(stdout, "success 2");
 	outputs.push_back({output_op, 0});
-	//fprintf(stdout, "success 3");
 	output_values.resize(outputs.size(), nullptr);
 	noutputs=outputs.size();
 	// Similar to creating the input tensor, however here we don't yet have the
@@ -128,6 +130,7 @@ int Dragon_TFSession::LoadGraph(float* pfdata)
 		  fprintf(stderr, "ERROR: Unable to new session %s", TF_Message(status));        
 		  return 1;
 	}
+	fprintf(stdout, "Successfully new session was created\n");
 
 }
 	

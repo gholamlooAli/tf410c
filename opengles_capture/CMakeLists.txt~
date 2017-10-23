@@ -3,7 +3,7 @@ project(opengles_capture)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-set(SOURCE_FILES main.cpp capture.cpp display.cpp gles_egl_util.cpp )
+set(SOURCE_FILES main.cpp capture.cpp display.cpp gles_egl_util.cpp tfdragon.cpp)
 set(EXECUTABLE capture)
 
 # add modules
